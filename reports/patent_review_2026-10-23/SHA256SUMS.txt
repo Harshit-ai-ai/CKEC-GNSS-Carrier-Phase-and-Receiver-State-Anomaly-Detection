@@ -1,0 +1,2 @@
+2fe054a886313bb6c146c6e1536b08f280f0590ace74e54d4523b00ea417d385  ckec/features/__init__.py
+46ab820b4dc47141e8b4d204b59ed8bb5056a9058670fbc3b3c5e59a0c46b76c  ckec/detectors/__init__.py

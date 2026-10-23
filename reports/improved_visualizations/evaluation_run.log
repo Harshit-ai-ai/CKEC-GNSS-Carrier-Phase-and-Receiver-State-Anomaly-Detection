@@ -1,0 +1,729 @@
+================================================================================
+DATA SOURCE: UNVERIFIED
+NOTE: data is not confirmed REAL. Do not describe these results as field-trial
+validation. Label every table/figure/claim with the source above.
+================================================================================
+Found 24 scenario files in data/processed/real_fresh
+
+--- jammertest_real_jamming_dynamic_1.10.4 ---
+  2013 samples (145 benign, 1868 attack), source=UNVERIFIED
+2026-10-24 02:57:23,926 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30024.0162 at target FAR=0.010
+2026-10-24 02:57:23,933 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.7450 at target FAR=0.010
+2026-10-24 02:57:23,935 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 1109160.0000 at target FAR=0.010
+2026-10-24 02:57:23,938 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 7020000.0000 at target FAR=0.010
+2026-10-24 02:57:23,941 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 2033828.8686 at target FAR=0.010
+2026-10-24 02:57:23,943 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 577306.4576 at target FAR=0.010
+2026-10-24 02:57:23,946 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 1080226368001.4653 at target FAR=0.010
+2026-10-24 02:57:23,949 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,950 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 1350282960002.1475 at target FAR=0.010
+2026-10-24 02:57:23,950 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,953 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 1350282960001.2178 at target FAR=0.010
+2026-10-24 02:57:23,956 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,957 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 1350282960002.1475 at target FAR=0.010
+2026-10-24 02:57:23,957 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,960 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,961 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 1350282960001.2178 at target FAR=0.010
+2026-10-24 02:57:23,961 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,964 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4136459866733.5884 at target FAR=0.010
+2026-10-24 02:57:23,967 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,968 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4136459866734.4214 at target FAR=0.010
+2026-10-24 02:57:23,968 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,971 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:23,971 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4136459866733.5884 at target FAR=0.010
+2026-10-24 02:57:23,972 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 44 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.579 F1=0.059 FAR=0.023
+  D3a_agc_only_lvl       AUC=0.687 F1=0.554 FAR=0.000
+  D3c_cn0_only           AUC=0.571 F1=0.372 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.463 F1=0.587 FAR=0.455
+  D4_joint_cn0           AUC=0.579 F1=0.372 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.579 F1=0.372 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.579 F1=0.372 FAR=0.000
+--- jammertest_real_jamming_dynamic_1.10.6 ---
+  2992 samples (352 benign, 2640 attack), source=UNVERIFIED
+2026-10-24 02:57:24,464 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30627.7956 at target FAR=0.010
+2026-10-24 02:57:24,468 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8694 at target FAR=0.010
+2026-10-24 02:57:24,471 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 702000.0000 at target FAR=0.010
+2026-10-24 02:57:24,474 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 3510000.0000 at target FAR=0.010
+2026-10-24 02:57:24,477 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 4764283.2051 at target FAR=0.010
+2026-10-24 02:57:24,481 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 4972864.1360 at target FAR=0.010
+2026-10-24 02:57:24,484 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 394243200003.7085 at target FAR=0.010
+2026-10-24 02:57:24,487 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,488 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 492804000003.7056 at target FAR=0.010
+2026-10-24 02:57:24,489 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,492 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 492804000003.0897 at target FAR=0.010
+2026-10-24 02:57:24,496 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,496 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 492804000003.7056 at target FAR=0.010
+2026-10-24 02:57:24,497 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,500 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,501 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 492804000003.0897 at target FAR=0.010
+2026-10-24 02:57:24,501 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,505 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 22699183107098.5430 at target FAR=0.010
+2026-10-24 02:57:24,508 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,509 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 22699183107099.3516 at target FAR=0.010
+2026-10-24 02:57:24,509 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,513 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:24,514 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 22699183107098.5430 at target FAR=0.010
+2026-10-24 02:57:24,514 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 106 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.495 F1=0.025 FAR=0.000
+  D3a_agc_only_lvl       AUC=0.714 F1=0.487 FAR=0.000
+  D3c_cn0_only           AUC=0.599 F1=0.166 FAR=0.009
+  D3c_cn0_only_lvl       AUC=0.670 F1=0.298 FAR=0.085
+  D4_joint_cn0           AUC=0.614 F1=0.166 FAR=0.009
+  D6_full_ckec_cn0       AUC=0.613 F1=0.166 FAR=0.009
+  D6ctrl_shifted_cn0     AUC=0.650 F1=0.166 FAR=0.009
+--- jammertest_real_jamming_dynamic_1.11.7 ---
+  1576 samples (1095 benign, 481 attack), source=UNVERIFIED
+2026-10-24 02:57:25,309 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,311 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,311 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,313 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,314 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 0 benign test samples: FAR=1% not resolvable
+--- jammertest_real_jamming_dynamic_1.11.8 ---
+  1845 samples (0 benign, 1845 attack), source=UNVERIFIED
+  [SKIP] too few benign or attack samples
+--- jammertest_real_jamming_dynamic_custom_1 ---
+  2128 samples (0 benign, 2128 attack), source=UNVERIFIED
+  [SKIP] too few benign or attack samples
+--- jammertest_real_jamming_dynamic_custom_2 ---
+  1884 samples (0 benign, 1884 attack), source=UNVERIFIED
+  [SKIP] too few benign or attack samples
+--- jammertest_real_jamming_stationary_1.6.4 ---
+  1325 samples (485 benign, 840 attack), source=UNVERIFIED
+2026-10-24 02:57:25,331 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30749.5207 at target FAR=0.010
+2026-10-24 02:57:25,334 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8963 at target FAR=0.010
+2026-10-24 02:57:25,336 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:25,339 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.5431 at target FAR=0.010
+2026-10-24 02:57:25,341 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 4.5904 at target FAR=0.010
+2026-10-24 02:57:25,344 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.1420 at target FAR=0.010
+2026-10-24 02:57:25,347 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.3149 at target FAR=0.010
+2026-10-24 02:57:25,349 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,350 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.5958 at target FAR=0.010
+2026-10-24 02:57:25,351 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,354 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.5958 at target FAR=0.010
+2026-10-24 02:57:25,357 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,357 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.5958 at target FAR=0.010
+2026-10-24 02:57:25,358 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,361 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,362 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.5958 at target FAR=0.010
+2026-10-24 02:57:25,362 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,365 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 23.6533 at target FAR=0.010
+2026-10-24 02:57:25,368 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,369 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 24.1195 at target FAR=0.010
+2026-10-24 02:57:25,369 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,372 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:25,373 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 23.6533 at target FAR=0.010
+2026-10-24 02:57:25,373 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.357 F1=0.012 FAR=0.012
+  D3a_agc_only_lvl       AUC=0.818 F1=0.781 FAR=0.020
+  D3c_cn0_only           AUC=0.620 F1=0.205 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.834 F1=0.667 FAR=0.000
+  D4_joint_cn0           AUC=0.557 F1=0.205 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.556 F1=0.205 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.597 F1=0.205 FAR=0.000
+--- jammertest_real_meaconing_dynamic_3.1.3_3.1.4 ---
+  1974 samples (954 benign, 1020 attack), source=UNVERIFIED
+2026-10-24 02:57:25,992 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30558.7172 at target FAR=0.010
+2026-10-24 02:57:25,996 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8313 at target FAR=0.010
+2026-10-24 02:57:25,999 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:26,002 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:26,005 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 2.1958 at target FAR=0.010
+2026-10-24 02:57:26,008 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 0.8188 at target FAR=0.010
+2026-10-24 02:57:26,011 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.0243 at target FAR=0.010
+2026-10-24 02:57:26,015 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,015 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3535 at target FAR=0.010
+2026-10-24 02:57:26,016 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,019 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3535 at target FAR=0.010
+2026-10-24 02:57:26,023 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,023 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3535 at target FAR=0.010
+2026-10-24 02:57:26,024 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,027 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,028 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3535 at target FAR=0.010
+2026-10-24 02:57:26,028 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,032 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.9895 at target FAR=0.010
+2026-10-24 02:57:26,035 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,036 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 5.8305 at target FAR=0.010
+2026-10-24 02:57:26,036 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,040 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,041 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.9895 at target FAR=0.010
+2026-10-24 02:57:26,041 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.503 F1=0.032 FAR=0.015
+  D3a_agc_only_lvl       AUC=0.952 F1=0.950 FAR=0.000
+  D3c_cn0_only           AUC=0.755 F1=0.347 FAR=0.001
+  D3c_cn0_only_lvl       AUC=0.818 F1=0.813 FAR=0.503
+  D4_joint_cn0           AUC=0.651 F1=0.367 FAR=0.004
+  D6_full_ckec_cn0       AUC=0.637 F1=0.371 FAR=0.004
+  D6ctrl_shifted_cn0     AUC=0.630 F1=0.377 FAR=0.006
+--- jammertest_real_meaconing_dynamic_3.2.8 ---
+  1274 samples (254 benign, 1020 attack), source=UNVERIFIED
+2026-10-24 02:57:26,740 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30560.3639 at target FAR=0.010
+2026-10-24 02:57:26,744 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.7085 at target FAR=0.010
+2026-10-24 02:57:26,747 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:26,750 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:26,753 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 11024325.4348 at target FAR=0.010
+2026-10-24 02:57:26,756 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 5733010.1670 at target FAR=0.010
+2026-10-24 02:57:26,759 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.5030 at target FAR=0.010
+2026-10-24 02:57:26,763 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,763 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.9192 at target FAR=0.010
+2026-10-24 02:57:26,764 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,767 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.9192 at target FAR=0.010
+2026-10-24 02:57:26,771 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,772 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.9192 at target FAR=0.010
+2026-10-24 02:57:26,772 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,775 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,776 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.9192 at target FAR=0.010
+2026-10-24 02:57:26,777 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,780 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 121535751293294.2344 at target FAR=0.010
+2026-10-24 02:57:26,784 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,784 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 121535751293294.9844 at target FAR=0.010
+2026-10-24 02:57:26,785 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,788 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:26,789 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 121535751293294.2344 at target FAR=0.010
+2026-10-24 02:57:26,789 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 124 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.486 F1=0.040 FAR=0.024
+  D3a_agc_only_lvl       AUC=0.987 F1=0.986 FAR=0.024
+  D3c_cn0_only           AUC=0.883 F1=0.807 FAR=0.177
+  D3c_cn0_only_lvl       AUC=0.963 F1=0.971 FAR=0.210
+  D4_joint_cn0           AUC=0.883 F1=0.807 FAR=0.177
+  D6_full_ckec_cn0       AUC=0.883 F1=0.807 FAR=0.177
+  D6ctrl_shifted_cn0     AUC=0.883 F1=0.807 FAR=0.177
+--- jammertest_real_meaconing_stationary_3.1.1_3.1.2 ---
+  1634 samples (674 benign, 960 attack), source=UNVERIFIED
+2026-10-24 02:57:27,390 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30796.1467 at target FAR=0.010
+2026-10-24 02:57:27,393 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.7052 at target FAR=0.010
+2026-10-24 02:57:27,396 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.1291 at target FAR=0.010
+2026-10-24 02:57:27,399 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.1291 at target FAR=0.010
+2026-10-24 02:57:27,402 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 283.0399 at target FAR=0.010
+2026-10-24 02:57:27,405 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 12852898.5840 at target FAR=0.010
+2026-10-24 02:57:27,408 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.5027 at target FAR=0.010
+2026-10-24 02:57:27,411 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,412 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.9245 at target FAR=0.010
+2026-10-24 02:57:27,412 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,416 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.9245 at target FAR=0.010
+2026-10-24 02:57:27,419 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,419 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.9245 at target FAR=0.010
+2026-10-24 02:57:27,420 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,423 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,424 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3922 at target FAR=0.010
+2026-10-24 02:57:27,424 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,428 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 80113.5700 at target FAR=0.010
+2026-10-24 02:57:27,431 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,432 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 80114.1706 at target FAR=0.010
+2026-10-24 02:57:27,432 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,435 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:27,436 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 80114.3765 at target FAR=0.010
+2026-10-24 02:57:27,436 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.437 F1=0.031 FAR=0.005
+  D3a_agc_only_lvl       AUC=0.972 F1=0.961 FAR=0.057
+  D3c_cn0_only           AUC=0.840 F1=0.692 FAR=0.032
+  D3c_cn0_only_lvl       AUC=0.949 F1=0.857 FAR=0.035
+  D4_joint_cn0           AUC=0.859 F1=0.692 FAR=0.032
+  D6_full_ckec_cn0       AUC=0.859 F1=0.692 FAR=0.032
+  D6ctrl_shifted_cn0     AUC=0.852 F1=0.692 FAR=0.032
+--- jammertest_real_meaconing_stationary_3.2.7 ---
+  1226 samples (326 benign, 900 attack), source=UNVERIFIED
+2026-10-24 02:57:28,054 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30712.1946 at target FAR=0.010
+2026-10-24 02:57:28,057 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6357 at target FAR=0.010
+2026-10-24 02:57:28,060 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:28,063 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:28,065 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 1.8694 at target FAR=0.010
+2026-10-24 02:57:28,068 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 3.7768 at target FAR=0.010
+2026-10-24 02:57:28,071 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.2112 at target FAR=0.010
+2026-10-24 02:57:28,074 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,075 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.6760 at target FAR=0.010
+2026-10-24 02:57:28,076 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,079 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.6760 at target FAR=0.010
+2026-10-24 02:57:28,082 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,082 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.6760 at target FAR=0.010
+2026-10-24 02:57:28,083 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,086 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,086 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.6760 at target FAR=0.010
+2026-10-24 02:57:28,087 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,090 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 5.3312 at target FAR=0.010
+2026-10-24 02:57:28,093 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,094 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 6.2634 at target FAR=0.010
+2026-10-24 02:57:28,094 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,097 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,098 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 5.3312 at target FAR=0.010
+2026-10-24 02:57:28,098 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 145 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.455 F1=0.041 FAR=0.034
+  D3a_agc_only_lvl       AUC=0.974 F1=0.972 FAR=0.014
+  D3c_cn0_only           AUC=0.967 F1=0.966 FAR=0.055
+  D3c_cn0_only_lvl       AUC=0.960 F1=0.934 FAR=0.497
+  D4_joint_cn0           AUC=0.962 F1=0.967 FAR=0.041
+  D6_full_ckec_cn0       AUC=0.962 F1=0.967 FAR=0.041
+  D6ctrl_shifted_cn0     AUC=0.968 F1=0.966 FAR=0.055
+--- jammertest_real_meaconing_stationary_3.2.8 ---
+  1362 samples (138 benign, 1224 attack), source=UNVERIFIED
+2026-10-24 02:57:28,687 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 31257.2107 at target FAR=0.010
+2026-10-24 02:57:28,690 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8074 at target FAR=0.010
+2026-10-24 02:57:28,693 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:28,696 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:28,699 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 1.6951 at target FAR=0.010
+2026-10-24 02:57:28,702 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 0.9370 at target FAR=0.010
+2026-10-24 02:57:28,705 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.9199 at target FAR=0.010
+2026-10-24 02:57:28,708 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,708 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.2666 at target FAR=0.010
+2026-10-24 02:57:28,709 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,712 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.2666 at target FAR=0.010
+2026-10-24 02:57:28,715 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,716 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.2666 at target FAR=0.010
+2026-10-24 02:57:28,716 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,719 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,720 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.2666 at target FAR=0.010
+2026-10-24 02:57:28,720 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,723 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 6.4503 at target FAR=0.010
+2026-10-24 02:57:28,727 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,727 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 7.3576 at target FAR=0.010
+2026-10-24 02:57:28,728 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,731 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:28,732 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 6.4503 at target FAR=0.010
+2026-10-24 02:57:28,732 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 42 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.357 F1=0.019 FAR=0.048
+  D3a_agc_only_lvl       AUC=0.997 F1=0.996 FAR=0.024
+  D3c_cn0_only           AUC=0.938 F1=0.653 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.934 F1=0.954 FAR=0.714
+  D4_joint_cn0           AUC=0.675 F1=0.642 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.674 F1=0.642 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.782 F1=0.644 FAR=0.000
+--- jammertest_real_spoofing_+_jamming_dynamic_2.6.2 ---
+  1655 samples (424 benign, 1231 attack), source=UNVERIFIED
+2026-10-24 02:57:29,332 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30602.7291 at target FAR=0.010
+2026-10-24 02:57:29,336 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6896 at target FAR=0.010
+2026-10-24 02:57:29,339 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:29,342 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:29,345 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 1.6566 at target FAR=0.010
+2026-10-24 02:57:29,348 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.1330 at target FAR=0.010
+2026-10-24 02:57:29,351 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.4256 at target FAR=0.010
+2026-10-24 02:57:29,354 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,355 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.8546 at target FAR=0.010
+2026-10-24 02:57:29,355 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,359 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.8546 at target FAR=0.010
+2026-10-24 02:57:29,362 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,363 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.8546 at target FAR=0.010
+2026-10-24 02:57:29,363 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,366 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,367 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.8546 at target FAR=0.010
+2026-10-24 02:57:29,367 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,370 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.5803 at target FAR=0.010
+2026-10-24 02:57:29,374 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,374 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.3331 at target FAR=0.010
+2026-10-24 02:57:29,375 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,378 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:29,378 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.5803 at target FAR=0.010
+2026-10-24 02:57:29,379 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.403 F1=0.032 FAR=0.017
+  D3a_agc_only_lvl       AUC=0.998 F1=0.988 FAR=0.101
+  D3c_cn0_only           AUC=0.967 F1=0.951 FAR=0.439
+  D3c_cn0_only_lvl       AUC=0.998 F1=0.940 FAR=0.547
+  D4_joint_cn0           AUC=0.967 F1=0.950 FAR=0.443
+  D6_full_ckec_cn0       AUC=0.967 F1=0.950 FAR=0.446
+  D6ctrl_shifted_cn0     AUC=0.967 F1=0.942 FAR=0.523
+--- jammertest_real_spoofing_+_jamming_dynamic_2.6.4 ---
+  2082 samples (881 benign, 1201 attack), source=UNVERIFIED
+2026-10-24 02:57:30,028 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 31076.5310 at target FAR=0.010
+2026-10-24 02:57:30,031 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.7609 at target FAR=0.010
+2026-10-24 02:57:30,034 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 582660.0000 at target FAR=0.010
+2026-10-24 02:57:30,037 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 702000.0000 at target FAR=0.010
+2026-10-24 02:57:30,040 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 6333596.9159 at target FAR=0.010
+2026-10-24 02:57:30,043 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 6767783.6131 at target FAR=0.010
+2026-10-24 02:57:30,047 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 327221856001.0016 at target FAR=0.010
+2026-10-24 02:57:30,050 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,051 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 409027320001.5784 at target FAR=0.010
+2026-10-24 02:57:30,051 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,055 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 409027320000.8336 at target FAR=0.010
+2026-10-24 02:57:30,059 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,060 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 409027320001.5784 at target FAR=0.010
+2026-10-24 02:57:30,060 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,064 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,065 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 409027320000.8336 at target FAR=0.010
+2026-10-24 02:57:30,065 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,069 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 40144771089428.0000 at target FAR=0.010
+2026-10-24 02:57:30,072 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,073 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 40144771089428.7422 at target FAR=0.010
+2026-10-24 02:57:30,074 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,077 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,078 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 40144771089428.0000 at target FAR=0.010
+2026-10-24 02:57:30,078 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 119 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.469 F1=0.030 FAR=0.017
+  D3a_agc_only_lvl       AUC=1.000 F1=1.000 FAR=0.000
+  D3c_cn0_only           AUC=0.989 F1=0.603 FAR=0.000
+  D3c_cn0_only_lvl       AUC=1.000 F1=0.998 FAR=0.000
+  D4_joint_cn0           AUC=0.989 F1=0.603 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.989 F1=0.603 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.989 F1=0.603 FAR=0.000
+--- jammertest_real_spoofing_+_jamming_stationary_2.6.1 ---
+  1604 samples (343 benign, 1261 attack), source=UNVERIFIED
+2026-10-24 02:57:30,681 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30473.8678 at target FAR=0.010
+2026-10-24 02:57:30,685 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.9176 at target FAR=0.010
+2026-10-24 02:57:30,688 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:30,690 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:30,693 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 0.1146 at target FAR=0.010
+2026-10-24 02:57:30,696 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.9261 at target FAR=0.010
+2026-10-24 02:57:30,699 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.4125 at target FAR=0.010
+2026-10-24 02:57:30,702 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,703 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.6771 at target FAR=0.010
+2026-10-24 02:57:30,703 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,706 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.6771 at target FAR=0.010
+2026-10-24 02:57:30,709 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,710 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.6771 at target FAR=0.010
+2026-10-24 02:57:30,710 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,713 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,714 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.6771 at target FAR=0.010
+2026-10-24 02:57:30,715 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,718 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.0313 at target FAR=0.010
+2026-10-24 02:57:30,721 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,721 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.8006 at target FAR=0.010
+2026-10-24 02:57:30,722 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,725 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:30,726 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.0313 at target FAR=0.010
+2026-10-24 02:57:30,726 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 119 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.467 F1=0.060 FAR=0.042
+  D3a_agc_only_lvl       AUC=0.982 F1=0.982 FAR=0.000
+  D3c_cn0_only           AUC=0.980 F1=0.943 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.964 F1=0.979 FAR=0.000
+  D4_joint_cn0           AUC=0.883 F1=0.873 FAR=0.008
+  D6_full_ckec_cn0       AUC=0.876 F1=0.872 FAR=0.008
+  D6ctrl_shifted_cn0     AUC=0.914 F1=0.880 FAR=0.034
+--- jammertest_real_spoofing_+_jamming_stationary_2.6.3 ---
+  1698 samples (497 benign, 1201 attack), source=UNVERIFIED
+2026-10-24 02:57:31,350 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 31020.6899 at target FAR=0.010
+2026-10-24 02:57:31,353 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8355 at target FAR=0.010
+2026-10-24 02:57:31,357 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:31,360 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:31,362 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:31,365 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.5142 at target FAR=0.010
+2026-10-24 02:57:31,368 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.0474 at target FAR=0.010
+2026-10-24 02:57:31,371 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,372 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,372 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,376 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,379 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,380 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,380 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,384 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,384 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,385 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,388 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,391 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,392 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.2750 at target FAR=0.010
+2026-10-24 02:57:31,392 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,395 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:31,396 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.3728 at target FAR=0.010
+2026-10-24 02:57:31,397 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.245 F1=0.025 FAR=0.021
+  D3a_agc_only_lvl       AUC=1.000 F1=0.996 FAR=0.030
+  D3c_cn0_only           AUC=0.935 F1=0.970 FAR=0.218
+  D3c_cn0_only_lvl       AUC=0.998 F1=0.997 FAR=0.018
+  D4_joint_cn0           AUC=0.762 F1=0.734 FAR=0.096
+  D6_full_ckec_cn0       AUC=0.755 F1=0.731 FAR=0.093
+  D6ctrl_shifted_cn0     AUC=0.750 F1=0.741 FAR=0.212
+--- jammertest_real_spoofing_dynamic_2.2.3_2.3.3 ---
+  2223 samples (638 benign, 1585 attack), source=UNVERIFIED
+2026-10-24 02:57:32,046 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30929.4339 at target FAR=0.010
+2026-10-24 02:57:32,049 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.8440 at target FAR=0.010
+2026-10-24 02:57:32,053 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:32,055 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:32,058 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 8.0369 at target FAR=0.010
+2026-10-24 02:57:32,061 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 5.3907 at target FAR=0.010
+2026-10-24 02:57:32,065 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.0806 at target FAR=0.010
+2026-10-24 02:57:32,068 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,069 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.4005 at target FAR=0.010
+2026-10-24 02:57:32,069 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,072 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.4005 at target FAR=0.010
+2026-10-24 02:57:32,076 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,076 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.4005 at target FAR=0.010
+2026-10-24 02:57:32,077 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,080 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,081 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 3.4005 at target FAR=0.010
+2026-10-24 02:57:32,081 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,085 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 67.3900 at target FAR=0.010
+2026-10-24 02:57:32,088 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,088 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 68.0456 at target FAR=0.010
+2026-10-24 02:57:32,089 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,092 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,093 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 67.3900 at target FAR=0.010
+2026-10-24 02:57:32,093 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.509 F1=0.054 FAR=0.036
+  D3a_agc_only_lvl       AUC=0.933 F1=0.929 FAR=0.000
+  D3c_cn0_only           AUC=0.966 F1=0.927 FAR=0.010
+  D3c_cn0_only_lvl       AUC=0.987 F1=0.968 FAR=0.000
+  D4_joint_cn0           AUC=0.966 F1=0.926 FAR=0.010
+  D6_full_ckec_cn0       AUC=0.966 F1=0.926 FAR=0.010
+  D6ctrl_shifted_cn0     AUC=0.964 F1=0.926 FAR=0.010
+--- jammertest_real_spoofing_dynamic_2.3.13_2.3.15 ---
+  1652 samples (574 benign, 1078 attack), source=UNVERIFIED
+2026-10-24 02:57:32,817 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30737.5064 at target FAR=0.010
+2026-10-24 02:57:32,820 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 2.1428 at target FAR=0.010
+2026-10-24 02:57:32,823 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 2808000.0000 at target FAR=0.010
+2026-10-24 02:57:32,826 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 13941720.0000 at target FAR=0.010
+2026-10-24 02:57:32,829 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 16.7191 at target FAR=0.010
+2026-10-24 02:57:32,832 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 38.7472 at target FAR=0.010
+2026-10-24 02:57:32,835 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 6307891200001.6094 at target FAR=0.010
+2026-10-24 02:57:32,838 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,838 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 7884864000002.0898 at target FAR=0.010
+2026-10-24 02:57:32,839 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,842 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 7884864000001.3447 at target FAR=0.010
+2026-10-24 02:57:32,845 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,846 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 7884864000002.0898 at target FAR=0.010
+2026-10-24 02:57:32,846 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,849 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,850 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 7884864000001.3447 at target FAR=0.010
+2026-10-24 02:57:32,850 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,854 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 282.6681 at target FAR=0.010
+2026-10-24 02:57:32,857 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,858 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 282.6681 at target FAR=0.010
+2026-10-24 02:57:32,858 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,861 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:32,862 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 282.6681 at target FAR=0.010
+2026-10-24 02:57:32,862 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.481 F1=0.009 FAR=0.009
+  D3a_agc_only_lvl       AUC=0.863 F1=0.620 FAR=0.000
+  D3c_cn0_only           AUC=0.876 F1=0.236 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.539 F1=0.170 FAR=0.000
+  D4_joint_cn0           AUC=0.646 F1=0.236 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.627 F1=0.236 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.611 F1=0.236 FAR=0.000
+--- jammertest_real_spoofing_dynamic_2.3.2 ---
+  976 samples (134 benign, 842 attack), source=UNVERIFIED
+2026-10-24 02:57:33,504 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 29978.9606 at target FAR=0.010
+2026-10-24 02:57:33,507 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 2.0682 at target FAR=0.010
+2026-10-24 02:57:33,510 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 2.7835 at target FAR=0.010
+2026-10-24 02:57:33,513 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 1.3243 at target FAR=0.010
+2026-10-24 02:57:33,515 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 3.3708 at target FAR=0.010
+2026-10-24 02:57:33,518 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.5731 at target FAR=0.010
+2026-10-24 02:57:33,521 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 7.6070 at target FAR=0.010
+2026-10-24 02:57:33,524 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,524 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.8655 at target FAR=0.010
+2026-10-24 02:57:33,525 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,528 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 8.9217 at target FAR=0.010
+2026-10-24 02:57:33,531 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,532 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.8655 at target FAR=0.010
+2026-10-24 02:57:33,532 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,535 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,536 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.8443 at target FAR=0.010
+2026-10-24 02:57:33,536 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,539 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 13.0180 at target FAR=0.010
+2026-10-24 02:57:33,542 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,543 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 13.9291 at target FAR=0.010
+2026-10-24 02:57:33,543 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,547 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:33,547 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 13.9513 at target FAR=0.010
+2026-10-24 02:57:33,548 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 80 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.492 F1=0.107 FAR=0.062
+  D3a_agc_only_lvl       AUC=0.422 F1=0.269 FAR=0.000
+  D3c_cn0_only           AUC=0.812 F1=0.067 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.644 F1=0.224 FAR=0.000
+  D4_joint_cn0           AUC=0.657 F1=0.064 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.622 F1=0.064 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.561 F1=0.062 FAR=0.000
+--- jammertest_real_spoofing_stationary_2.1.1 ---
+  2503 samples (223 benign, 2280 attack), source=UNVERIFIED
+2026-10-24 02:57:34,102 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 30243.9340 at target FAR=0.010
+2026-10-24 02:57:34,105 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6584 at target FAR=0.010
+2026-10-24 02:57:34,109 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:34,112 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:34,115 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 1.9452 at target FAR=0.010
+2026-10-24 02:57:34,118 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 2.8089 at target FAR=0.010
+2026-10-24 02:57:34,122 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3005 at target FAR=0.010
+2026-10-24 02:57:34,125 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,126 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7505 at target FAR=0.010
+2026-10-24 02:57:34,126 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,130 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.7505 at target FAR=0.010
+2026-10-24 02:57:34,133 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,134 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7505 at target FAR=0.010
+2026-10-24 02:57:34,135 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,138 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,139 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7505 at target FAR=0.010
+2026-10-24 02:57:34,139 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,143 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 5.2712 at target FAR=0.010
+2026-10-24 02:57:34,147 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,148 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 6.0023 at target FAR=0.010
+2026-10-24 02:57:34,148 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,152 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,152 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 5.2712 at target FAR=0.010
+2026-10-24 02:57:34,153 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  [WARN] only 53 benign test samples: FAR=1% not resolvable
+  D2_phase_only          AUC=0.534 F1=0.066 FAR=0.019
+  D3a_agc_only_lvl       AUC=0.996 F1=0.996 FAR=0.000
+  D3c_cn0_only           AUC=0.713 F1=0.615 FAR=0.038
+  D3c_cn0_only_lvl       AUC=0.999 F1=0.999 FAR=0.038
+  D4_joint_cn0           AUC=0.752 F1=0.603 FAR=0.038
+  D6_full_ckec_cn0       AUC=0.744 F1=0.605 FAR=0.038
+  D6ctrl_shifted_cn0     AUC=0.809 F1=0.621 FAR=0.038
+--- jammertest_real_spoofing_stationary_2.1.3_2.1.2_2.1.4 ---
+  3671 samples (821 benign, 2850 attack), source=UNVERIFIED
+2026-10-24 02:57:34,927 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 29091.9036 at target FAR=0.010
+2026-10-24 02:57:34,930 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.5436 at target FAR=0.010
+2026-10-24 02:57:34,934 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:34,936 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:34,939 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 2.0099 at target FAR=0.010
+2026-10-24 02:57:34,942 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 2.6229 at target FAR=0.010
+2026-10-24 02:57:34,946 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.8594 at target FAR=0.010
+2026-10-24 02:57:34,949 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,950 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.3828 at target FAR=0.010
+2026-10-24 02:57:34,950 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,954 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.3828 at target FAR=0.010
+2026-10-24 02:57:34,957 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,957 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.3828 at target FAR=0.010
+2026-10-24 02:57:34,958 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,961 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,962 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.3828 at target FAR=0.010
+2026-10-24 02:57:34,962 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,966 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.8712 at target FAR=0.010
+2026-10-24 02:57:34,969 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,970 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 5.4986 at target FAR=0.010
+2026-10-24 02:57:34,970 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,973 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:34,974 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.8712 at target FAR=0.010
+2026-10-24 02:57:34,974 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.391 F1=0.075 FAR=0.067
+  D3a_agc_only_lvl       AUC=0.979 F1=0.978 FAR=0.000
+  D3c_cn0_only           AUC=0.974 F1=0.972 FAR=0.071
+  D3c_cn0_only_lvl       AUC=0.976 F1=0.938 FAR=0.879
+  D4_joint_cn0           AUC=0.971 F1=0.973 FAR=0.063
+  D6_full_ckec_cn0       AUC=0.971 F1=0.973 FAR=0.063
+  D6ctrl_shifted_cn0     AUC=0.970 F1=0.972 FAR=0.071
+--- jammertest_real_spoofing_stationary_2.3.10_2.3.11 ---
+  1884 samples (412 benign, 1472 attack), source=UNVERIFIED
+2026-10-24 02:57:35,696 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 29661.2293 at target FAR=0.010
+2026-10-24 02:57:35,699 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6641 at target FAR=0.010
+2026-10-24 02:57:35,702 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:35,705 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:35,708 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 3.0538 at target FAR=0.010
+2026-10-24 02:57:35,711 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 1.4947 at target FAR=0.010
+2026-10-24 02:57:35,714 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3237 at target FAR=0.010
+2026-10-24 02:57:35,717 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,718 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7698 at target FAR=0.010
+2026-10-24 02:57:35,718 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,722 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.7698 at target FAR=0.010
+2026-10-24 02:57:35,726 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,726 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7698 at target FAR=0.010
+2026-10-24 02:57:35,727 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,730 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,731 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7698 at target FAR=0.010
+2026-10-24 02:57:35,731 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,734 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 11.6101 at target FAR=0.010
+2026-10-24 02:57:35,737 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,738 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 12.4182 at target FAR=0.010
+2026-10-24 02:57:35,738 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,741 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:35,742 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 11.6101 at target FAR=0.010
+2026-10-24 02:57:35,742 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.480 F1=0.085 FAR=0.061
+  D3a_agc_only_lvl       AUC=0.942 F1=0.967 FAR=0.053
+  D3c_cn0_only           AUC=0.935 F1=0.851 FAR=0.015
+  D3c_cn0_only_lvl       AUC=0.893 F1=0.863 FAR=0.973
+  D4_joint_cn0           AUC=0.932 F1=0.846 FAR=0.015
+  D6_full_ckec_cn0       AUC=0.931 F1=0.845 FAR=0.015
+  D6ctrl_shifted_cn0     AUC=0.920 F1=0.847 FAR=0.015
+--- jammertest_real_spoofing_stationary_2.3.15_2.3.12 ---
+  1837 samples (575 benign, 1262 attack), source=UNVERIFIED
+2026-10-24 02:57:36,340 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 31117.6176 at target FAR=0.010
+2026-10-24 02:57:36,344 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6670 at target FAR=0.010
+2026-10-24 02:57:36,347 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:36,350 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 0.0000 at target FAR=0.010
+2026-10-24 02:57:36,352 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 1.8235 at target FAR=0.010
+2026-10-24 02:57:36,355 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 4.7751 at target FAR=0.010
+2026-10-24 02:57:36,359 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 3.3348 at target FAR=0.010
+2026-10-24 02:57:36,362 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,363 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7790 at target FAR=0.010
+2026-10-24 02:57:36,363 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,366 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 2.7790 at target FAR=0.010
+2026-10-24 02:57:36,370 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,370 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7790 at target FAR=0.010
+2026-10-24 02:57:36,371 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,374 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,375 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 2.7790 at target FAR=0.010
+2026-10-24 02:57:36,375 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,379 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 4.7378 at target FAR=0.010
+2026-10-24 02:57:36,382 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,382 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 5.6307 at target FAR=0.010
+2026-10-24 02:57:36,383 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,386 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:36,387 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 4.7378 at target FAR=0.010
+2026-10-24 02:57:36,387 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.412 F1=0.016 FAR=0.008
+  D3a_agc_only_lvl       AUC=0.979 F1=0.978 FAR=0.008
+  D3c_cn0_only           AUC=0.917 F1=0.896 FAR=0.057
+  D3c_cn0_only_lvl       AUC=0.934 F1=0.913 FAR=0.220
+  D4_joint_cn0           AUC=0.913 F1=0.898 FAR=0.047
+  D6_full_ckec_cn0       AUC=0.913 F1=0.898 FAR=0.047
+  D6ctrl_shifted_cn0     AUC=0.911 F1=0.899 FAR=0.059
+--- jammertest_real_spoofing_stationary_2.3.5_2.3.8 ---
+  1610 samples (415 benign, 1195 attack), source=UNVERIFIED
+2026-10-24 02:57:37,046 | INFO     | ckec.detectors | D1_raw_ratio: threshold calibrated to 27463.2722 at target FAR=0.010
+2026-10-24 02:57:37,049 | INFO     | ckec.detectors | D2_phase_only: threshold calibrated to 1.6518 at target FAR=0.010
+2026-10-24 02:57:37,053 | INFO     | ckec.detectors | D3a_agc_only: threshold calibrated to 2.7817 at target FAR=0.010
+2026-10-24 02:57:37,056 | INFO     | ckec.detectors | D3a_agc_only_lvl: threshold calibrated to 2.8283 at target FAR=0.010
+2026-10-24 02:57:37,059 | INFO     | ckec.detectors | D3c_cn0_only: threshold calibrated to 2.7162 at target FAR=0.010
+2026-10-24 02:57:37,062 | INFO     | ckec.detectors | D3c_cn0_only_lvl: threshold calibrated to 4.2414 at target FAR=0.010
+2026-10-24 02:57:37,066 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 8.0238 at target FAR=0.010
+2026-10-24 02:57:37,069 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,070 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.9690 at target FAR=0.010
+2026-10-24 02:57:37,070 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,074 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 9.2657 at target FAR=0.010
+2026-10-24 02:57:37,077 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,078 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.9690 at target FAR=0.010
+2026-10-24 02:57:37,078 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,082 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,083 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 9.2657 at target FAR=0.010
+2026-10-24 02:57:37,083 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,087 | INFO     | ckec.detectors | D4_joint: threshold calibrated to 8.4929 at target FAR=0.010
+2026-10-24 02:57:37,090 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,091 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 8.4929 at target FAR=0.010
+2026-10-24 02:57:37,092 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,095 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+2026-10-24 02:57:37,096 | INFO     | ckec.detectors | D6_full_ckec: threshold calibrated to 8.4929 at target FAR=0.010
+2026-10-24 02:57:37,096 | WARNING  | ckec.detectors | D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+  D2_phase_only          AUC=0.486 F1=0.078 FAR=0.044
+  D3a_agc_only_lvl       AUC=0.793 F1=0.929 FAR=0.244
+  D3c_cn0_only           AUC=0.627 F1=0.003 FAR=0.000
+  D3c_cn0_only_lvl       AUC=0.497 F1=0.000 FAR=0.000
+  D4_joint_cn0           AUC=0.495 F1=0.003 FAR=0.000
+  D6_full_ckec_cn0       AUC=0.480 F1=0.003 FAR=0.000
+  D6ctrl_shifted_cn0     AUC=0.384 F1=0.003 FAR=0.000
+
+================================================================================
+DATA SOURCE: UNVERIFIED
+NOTE: data is not confirmed REAL. Do not describe these results as field-trial
+validation. Label every table/figure/claim with the source above.
+================================================================================
+21 scenarios evaluated -> reports/improved_visualizations/real_evaluation_results.csv
+
+--- MEAN METRICS (all scenarios) ---
+          detector  n_scenarios  mean_roc_auc  mean_pr_auc  mean_f1  median_delay_s
+  D3a_agc_only_lvl           20         0.899        0.971    0.866             6.5
+  D3c_cn0_only_lvl           20         0.851        0.965    0.753             1.0
+      D3c_cn0_only           20         0.843        0.961    0.612             6.5
+      D4_joint_cn0           20         0.786        0.942    0.596             5.0
+D6ctrl_shifted_cn0           20         0.785        0.938    0.598             5.0
+  D6_full_ckec_cn0           20         0.780        0.941    0.596             5.0
+  D6_full_ckec_agc           20         0.623        0.893    0.302            10.0
+      D6_full_ckec           20         0.623        0.893    0.302            10.0
+      D3a_agc_only           20         0.592        0.866    0.262            11.5
+      D4_joint_agc           20         0.555        0.878    0.280            10.0
+          D4_joint           20         0.554        0.877    0.280            10.0
+D6ctrl_shifted_agc           20         0.548        0.872    0.289            10.0
+     D2_phase_only           20         0.452        0.819    0.045            25.5
+      D1_raw_ratio           20         0.357        0.789    0.046            27.5
+
+--- SCENARIO-LEVEL PAIRED TESTS, ROC-AUC, group=all (Holm-adjusted) ---
+               A                  B  n_scenarios  mean_diff  n_A_better  n_B_better  holm_p
+D6_full_ckec_cn0       D4_joint_cn0           20    -0.0054           4          16  0.0484
+D6_full_ckec_agc       D4_joint_agc           20     0.0681          20           0  0.0001
+D6_full_ckec_cn0 D6ctrl_shifted_cn0           20    -0.0043          11           9  1.0000
+D6_full_ckec_agc D6ctrl_shifted_agc           20     0.0750          19           1  0.0011
+D6_full_ckec_cn0       D3c_cn0_only           20    -0.0630           6          14  0.8143
+D3c_cn0_only_lvl       D3c_cn0_only           20     0.0077          12           8  1.0000
+D3a_agc_only_lvl       D3a_agc_only           20     0.3076          19           1  0.0002
+    D6_full_ckec           D4_joint           20     0.0687          20           0  0.0001
+    D6_full_ckec      D2_phase_only           20     0.1709          20           0  0.0001

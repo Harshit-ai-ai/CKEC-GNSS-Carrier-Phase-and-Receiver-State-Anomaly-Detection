@@ -1,0 +1,116 @@
+"""
+scripts/run_real_ablation.py
+============================
+Ablation analysis of cross-modal coupling weight (w_c) and window length (W)
+on REAL Jammertest-2024 physical GNSS attack data.
+
+Evaluates how the cross-modal correlation term affects detection performance
+relative to joint (w_c = 0) and phase-only baselines.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import click
+import numpy as np
+import pandas as pd
+
+from scripts.evaluate_real_data import prepare_features, temporal_split
+from ckec.detectors import FullCKECDetector
+from ckec.evaluation import compute_metrics
+
+
+@click.command()
+@click.option("--data-dir", default="data/processed/real", help="Directory with processed real CSVs")
+@click.option("--output", default="reports/real_ablation_diagnostics.csv", help="Output CSV path")
+@click.option("--target-far", default=0.01, type=float, help="Target false alarm rate")
+def main(data_dir: str, output: str, target_far: float) -> None:
+    data_path = Path(data_dir)
+    real_files = sorted(data_path.glob("*.csv"))
+    real_files = [f for f in real_files if f.name != "ingestion_summary.csv"]
+
+    print(f"Running real data ablation sweep across {len(real_files)} scenarios...")
+    weights_c = [0.0, 0.25, 0.5, 1.0, 2.0]
+    windows = [5, 10, 20]
+
+    records = []
+
+    for f in real_files:
+        df = pd.read_csv(f)
+        if (df["attack_label"] == 0).sum() < 20 or (df["attack_label"] != 0).sum() < 10:
+            continue
+
+        for w in windows:
+            feat_df = prepare_features(df, window_corr=w)
+            _, val_df, test_df = temporal_split(feat_df)
+            y_val = (val_df["attack_label"] != 0).astype(int).to_numpy()
+            y_test = (test_df["attack_label"] != 0).astype(int).to_numpy()
+
+            if (y_test == 0).sum() == 0 or (y_test == 1).sum() == 0:
+                continue
+
+            for wc in weights_c:
+                det = FullCKECDetector(secondary_col="z_agc", w_phi=1.0, w_secondary=1.0, w_c=wc)
+                try:
+                    det.fit(val_df, y_val, target_far=target_far)
+                    preds = det.predict(test_df).to_numpy()
+                    scores = det.score(test_df).to_numpy()
+
+                    tp = ((y_test == 1) & (preds == 1)).sum()
+                    fp = ((y_test == 0) & (preds == 1)).sum()
+                    fn = ((y_test == 1) & (preds == 0)).sum()
+                    tn = ((y_test == 0) & (preds == 0)).sum()
+
+                    prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+                    rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+                    f1 = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
+                    far = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+
+                    records.append({
+                        "scenario": f.stem,
+                        "window_samples": w,
+                        "w_c": wc,
+                        "precision": prec,
+                        "recall": rec,
+                        "f1": f1,
+                        "far": far,
+                        "status": "OK",
+                        "error": "",
+                    })
+                except Exception as e:
+                    records.append({
+                        "scenario": f.stem,
+                        "window_samples": w,
+                        "w_c": wc,
+                        "precision": np.nan,
+                        "recall": np.nan,
+                        "f1": np.nan,
+                        "far": np.nan,
+                        "status": "FAILED",
+                        "error": f"{type(e).__name__}: {e}",
+                    })
+                    print(
+                        f"FAILED: scenario={f.stem}, window={w}, "
+                        f"w_c={wc}: {type(e).__name__}: {e}"
+                    )
+
+    if records:
+        res_df = pd.DataFrame(records)
+        out_p = Path(output)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        res_df.to_csv(out_p, index=False)
+        print(f"Saved {len(records)} ablation results to: {out_p}\n")
+
+        print("=== ABLATION SUMMARY: EFFECT OF CROSS-MODAL WEIGHT (w_c) ===")
+        print("(w_c = 0 is equivalent to D4 Joint Detector without correlation term)\n")
+        agg = res_df[res_df["window_samples"] == 20].groupby("w_c")["f1"].agg(["mean", "std", "count"])
+        print(agg)
+        print("\n" + "="*60)
+
+
+if __name__ == "__main__":
+    main()

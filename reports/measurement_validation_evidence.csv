@@ -1,0 +1,11 @@
+dataset,file_or_stream,field_name,data_type,units_or_scaling,sampling_interval,alignment_reference,evidence_source,unresolved_issues
+Jammertest-2024,raw UBX stream,UBX-MON-RF.agcCnt,U2 integer,0-8191 count (8191=100% gain),1 Hz / periodic,iTOW (ms into GPS week),u-blox ZED-F9P interface manual / JammerTest 2024 logs,Clock jumps during high-power jamming require synchronization to RXM-RAWX time
+Jammertest-2024,RINEX 3.04 obs,L1C / L2W / L5Q,Float + LLI flag,Full carrier cycles,1 Hz,GPST epoch header,RINEX 3.04 observation headers,Cycle slips during spoofing takeover must be tracked via LLI flags
+Jammertest-2024,RINEX 3.04 obs,S1C / S5I,Float,dB-Hz (C/N0),1 Hz,GPST epoch header,RINEX 3.04 observation headers,Receiver-calculated metric; distinct from front-end hardware AGC
+Jammertest-2024,trial metadata,event_log,CSV / JSON,UTC event timestamps,Per trial run,UTC / GPST,Sayyaf et al. 2024 / JammerTest schedule,Specific transmitter power levels must be joined from trial schedule
+FGI-SpoofRepo,MATLAB trackResults,trackResults.carrPhase,Float array,Cycles / meters,Tracking loop rate (e.g. 50-1000 Hz),Sample index / receiver time,FGI-GSRx SDR output logs,High tracking rate must be decimated or downsampled to match RINEX rates
+FGI-SpoofRepo,MATLAB trackResults,sqrt(I_P^2 + Q_P^2),Float array,Prompt correlator amplitude (arbitrary units),Tracking loop rate,Sample index / receiver time,FGI-GSRx SDR tracking architecture,Prompt power is NOT AGC; measures post-correlation despread signal
+FGI-SpoofRepo,scenario metadata,attack_onset,Documented timing,Seconds from file start,Static,Trial run documentation,fairdata.fi repository documentation,Targeted SFMC/DFMC clean baseline is ~130s; NOT universally 60s
+Yunnan-2024,raw UBX table,UBX-RXM-RAWX.cpMes,Float (R8),Carrier phase in cycles,1 Hz,rcvTow (s),Data in Brief 2024 Table 1,Single antenna rooftop setup; no spatial array baseline
+Yunnan-2024,raw UBX table,UBX-NAV-SAT.cno,U1 (integer),dB-Hz (C/N0),1 Hz,iTOW (ms),Data in Brief 2024 Table 1,C/N0 measures carrier power relative to noise density; NOT front-end AGC
+Yunnan-2024,session tables,attack_interval,Table records,Timestamps / sample windows,Per scenario,Experiment logs,Data in Brief 2024 Table 1 & narrative,Irregular emission windows with HackRF One and jammer require precise window parsing

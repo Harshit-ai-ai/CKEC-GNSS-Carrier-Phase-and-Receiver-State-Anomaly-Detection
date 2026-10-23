@@ -1,0 +1,257 @@
+"""
+ckec.preprocessing — Signal cleaning, temporal alignment, and phase handling.
+
+All functions operate on pandas DataFrames with a uniform sample index.
+They never silently drop or fill data without logging a warning.
+
+V2 Improvements
+---------------
+* estimate_benign_stats now uses MAD (Median Absolute Deviation) as a robust
+  alternative to std, which is insensitive to outliers in the calibration window.
+* Added estimate_benign_stats_robust for explicit MAD-based estimation.
+* Added clip_innovations to pre-filter extreme phase/AGC spikes before z-scoring.
+* Added exponential smoothing helper for adaptive per-sample statistics.
+"""
+
+from __future__ import annotations
+
+import logging
+import numpy as np
+import pandas as pd
+
+log = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Phase handling
+# ---------------------------------------------------------------------------
+
+def unwrap_phase(series: pd.Series, discont: float = np.pi) -> pd.Series:
+    """
+    Unwrap a carrier-phase series using numpy.unwrap.
+
+    Parameters
+    ----------
+    series   : phase observations in radians
+    discont  : discontinuity threshold (default π rad)
+
+    Returns
+    -------
+    unwrapped phase series with the same index
+    """
+    unwrapped = np.unwrap(series.to_numpy(), discont=discont)
+    return pd.Series(unwrapped, index=series.index, name=series.name)
+
+
+def wrap_phase(value: float | np.ndarray) -> float | np.ndarray:
+    """Wrap a phase value or array to (−π, π]."""
+    return (np.asarray(value) + np.pi) % (2 * np.pi) - np.pi
+
+
+def temporal_difference(series: pd.Series, periods: int = 1) -> pd.Series:
+    """Return the first difference of a series (Δy_t = y_t − y_{t-1})."""
+    return series.diff(periods=periods)
+
+
+# ---------------------------------------------------------------------------
+# AGC smoothing
+# ---------------------------------------------------------------------------
+
+def smooth_agc(agc: pd.Series, window: int = 5) -> pd.Series:
+    """
+    Apply a centred rolling-mean filter to AGC observations.
+
+    A window of 1 or less returns the series unchanged.
+    AGC is a receiver-level aggregate measurement; smoothing reduces sample-
+    to-sample noise but may also slow the response to genuine step changes.
+    Choose window size carefully and report it in the evaluation log.
+    """
+    if window <= 1:
+        return agc
+    smoothed = agc.rolling(window=window, center=True, min_periods=1).mean()
+    return smoothed.rename(agc.name)
+
+
+def clip_innovations(
+    series: pd.Series,
+    n_sigma: float = 8.0,
+    window: int = 50,
+) -> pd.Series:
+    """
+    Clip extreme innovation spikes before z-scoring.
+
+    Replaces values beyond n_sigma * MAD with the rolling median.
+    This prevents receiver-reset artifacts from contaminating the calibration
+    or inflating z-scores for subsequent genuine changes.
+
+    Parameters
+    ----------
+    series   : series of innovations (first differences)
+    n_sigma  : clipping threshold in robust sigma units
+    window   : rolling window for local median and MAD estimation
+    """
+    roll_med = series.rolling(window=window, center=True, min_periods=3).median()
+    roll_mad = (series - roll_med).abs().rolling(window=window, center=True, min_periods=3).median()
+    robust_sigma = roll_mad * 1.4826   # MAD → equivalent Gaussian sigma
+    threshold = n_sigma * robust_sigma
+    outlier_mask = (series - roll_med).abs() > threshold.fillna(threshold.median())
+    clipped = series.copy()
+    clipped[outlier_mask] = roll_med[outlier_mask]
+    if outlier_mask.sum() > 0:
+        log.debug("clip_innovations: clipped %d outlier samples.", outlier_mask.sum())
+    return clipped.rename(series.name)
+
+
+# ---------------------------------------------------------------------------
+# Temporal alignment
+# ---------------------------------------------------------------------------
+
+def align_channels(
+    df: pd.DataFrame,
+    time_col: str = "time_s",
+    tolerance_s: float = 0.01,
+) -> pd.DataFrame:
+    """
+    Check that successive samples are within `tolerance_s` of a uniform grid.
+    Logs a warning (and inserts NaN rows) if gaps exceed the tolerance.
+
+    This is intentionally conservative: it does not silently resample data
+    from physically different sampling instants.
+
+    Parameters
+    ----------
+    df           : DataFrame with a numeric time column
+    time_col     : name of the time column in seconds
+    tolerance_s  : maximum allowed deviation from uniform spacing
+
+    Returns
+    -------
+    df (possibly with NaN-filled gap rows inserted)
+    """
+    if time_col not in df.columns:
+        log.warning("Time column '%s' not found; skipping alignment check.", time_col)
+        return df
+
+    dt = df[time_col].diff().dropna()
+    median_dt = dt.median()
+    irregular = dt[(dt - median_dt).abs() > tolerance_s]
+    if not irregular.empty:
+        log.warning(
+            "%d irregular time gaps detected (tolerance %.3f s). "
+            "Inserting NaN rows at affected positions.",
+            len(irregular),
+            tolerance_s,
+        )
+        # Build a uniform grid and reindex
+        t_start, t_end = df[time_col].iloc[0], df[time_col].iloc[-1]
+        n_samples = round((t_end - t_start) / median_dt) + 1
+        uniform_times = np.linspace(t_start, t_end, int(n_samples))
+        df_uniform = pd.DataFrame({time_col: uniform_times})
+        df = pd.merge_asof(
+            df_uniform, df, on=time_col, tolerance=tolerance_s, direction="nearest"
+        )
+    return df
+
+
+# ---------------------------------------------------------------------------
+# Missing-value handling
+# ---------------------------------------------------------------------------
+
+def handle_missing(
+    df: pd.DataFrame,
+    strategy: str = "interpolate",
+    max_gap: int = 10,
+) -> pd.DataFrame:
+    """
+    Handle NaN values in the DataFrame.
+
+    Parameters
+    ----------
+    strategy : "interpolate" | "drop" | "forward_fill"
+    max_gap  : maximum number of consecutive NaN values to fill
+               (gaps longer than this remain as NaN)
+
+    Notes
+    -----
+    Missing AGC or phase values at attack boundaries can affect detection delay
+    measurements.  Always log the number and location of filled values.
+    """
+    n_missing_before = df.isna().sum().sum()
+    if n_missing_before == 0:
+        return df
+
+    if strategy == "interpolate":
+        df = df.interpolate(method="linear", limit=max_gap, limit_direction="both")
+    elif strategy == "forward_fill":
+        df = df.ffill(limit=max_gap)
+    elif strategy == "drop":
+        df = df.dropna()
+    else:
+        raise ValueError(f"Unknown missing-value strategy: '{strategy}'")
+
+    n_missing_after = df.isna().sum().sum()
+    log.info(
+        "Missing values: %d before -> %d after ('%s', max_gap=%d).",
+        n_missing_before, n_missing_after, strategy, max_gap,
+    )
+    return df
+
+
+# ---------------------------------------------------------------------------
+# Calibration window estimation
+# ---------------------------------------------------------------------------
+
+def estimate_benign_stats(
+    series: pd.Series,
+    n_samples: int,
+    use_mad: bool = True,
+) -> tuple[float, float]:
+    """
+    Estimate mean and standard deviation from the first `n_samples` of a series,
+    assumed to represent a benign (pre-attack) interval.
+
+    IMPORTANT: this window must be from validation/training data,
+    never from the held-out test set.
+
+    Parameters
+    ----------
+    series    : input signal series
+    n_samples : number of initial samples to use (benign calibration window)
+    use_mad   : if True, use Median Absolute Deviation for robust sigma;
+                if False, fall back to sample standard deviation.
+
+    Returns
+    -------
+    (mu, sigma) : float, float
+    """
+    if not isinstance(series, pd.Series):
+        series = pd.Series(series)
+    calibration = series.iloc[:n_samples].dropna()
+    if len(calibration) == 0:
+        raise ValueError("Calibration window is empty after dropping NaN values.")
+    mu = float(calibration.median() if use_mad else calibration.mean())
+    if use_mad:
+        mad = float((calibration - mu).abs().median())
+        sigma = mad * 1.4826  # scale factor to match Gaussian std
+        if sigma < 1e-8:
+            # Fall back to std if MAD is degenerate
+            sigma = float(calibration.std(ddof=1))
+            log.debug("MAD is degenerate; falling back to std for calibration sigma.")
+    else:
+        sigma = float(calibration.std(ddof=1))
+    if sigma == 0.0 or np.isnan(sigma):
+        log.warning("Calibration sigma is exactly zero or NaN; using fallback sigma=1e-6.")
+        sigma = 1e-6
+    return mu, sigma
+
+
+def estimate_benign_stats_robust(
+    series: pd.Series,
+    n_samples: int,
+) -> tuple[float, float]:
+    """
+    Alias for estimate_benign_stats(use_mad=True) for explicit call sites.
+    Always uses MAD for sigma estimation. Preferred over the std-based version
+    because real GNSS calibration windows may contain short transients.
+    """
+    return estimate_benign_stats(series, n_samples, use_mad=True)

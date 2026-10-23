@@ -1,0 +1,19 @@
+D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+D6: 'z_residual' not available - geometry term omitted (expected for real datasets).
+
+=== CKEC-GNSS V4 Figure Generation ===
+
+Generating Figure 1: Time-Series (V4, visible signal)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig1_anomaly_onset_coupling.png
+Generating Figure 2: ROC & PR (V4)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig2_roc_pr_curves.png
+Generating Figure 3: Comparison bars (V4, verified annotations)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig3_detector_comparison_bar.png
+Generating Figure 5: Ablation sweep (V4)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig5_real_ablation_curves.png
+Generating Figure 6: CUSUM accumulation (V4, honest FAR)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig6_cusum_scenarios.png
+Generating Figure 7: Radar chart (V4, from CSV)...
+  Saved: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/fig7_radar_comparison.png
+
+All figures saved to: /home/harshitsachdeva/Documents/ckec-gnss-master/reports/figures/

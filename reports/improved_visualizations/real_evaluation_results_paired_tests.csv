@@ -1,0 +1,91 @@
+metric,A,B,comparison,group,n_scenarios,mean_diff,median_diff,n_A_better,n_B_better,wilcoxon_p,holm_p,significant_holm_0.05
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),all,20,-0.0053834323625728845,-0.000704087959209454,4,16,0.001209259033203125,0.048370361328125,True
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),jamming,3,-0.0006647553486854122,-0.0006211180124223725,0,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),meaconing,5,-0.0029126668985451467,-0.0002055660974067397,1,4,0.3125,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),spoof_jam,4,-0.0033839988715745617,-0.0033876640382651257,1,3,0.375,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),spoofing,8,-0.009696881403297185,-0.004446266644967001,2,6,0.0546875,1.0,False
+roc_auc,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),all,20,0.06805707310744089,0.05895529029170796,20,0,1.9073486328125e-06,8.58306884765625e-05,True
+roc_auc,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),jamming,3,0.05886536521337432,0.04279363886801901,3,0,0.25,1.0,False
+roc_auc,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),meaconing,5,0.07580489141065856,0.07223276407337142,5,0,0.0625,1.0,False
+roc_auc,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),spoof_jam,4,0.07635258737983547,0.07140866170966864,4,0,0.125,1.0,False
+roc_auc,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),spoofing,8,0.06251381999200753,0.05895529029170796,8,0,0.0078125,0.3046875,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),all,20,-0.004276910376198939,0.0007749524039782907,11,9,0.8983173370361328,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),jamming,3,-0.025767402753155217,-0.036376385400791245,0,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),meaconing,5,-0.02011236745215843,-0.0003478810879191663,2,3,1.0,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),spoof_jam,4,-0.00822054426468996,-0.0001178679921519099,2,2,0.875,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),spoofing,8,0.01565100188187986,0.006627625968916417,7,1,0.1484375,1.0,False
+roc_auc,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),all,20,0.07502999412877379,0.07839947616007437,19,1,2.6702880859375e-05,0.001094818115234375,True
+roc_auc,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),jamming,3,0.04486135582380305,0.04279363886801901,2,1,0.5,1.0,False
+roc_auc,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),meaconing,5,0.04903738255112983,0.011303630363036332,5,0,0.0625,1.0,False
+roc_auc,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),spoof_jam,4,0.08896589294010414,0.10020504330711871,4,0,0.125,1.0,False
+roc_auc,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),spoofing,8,0.09562066632350011,0.09689080021139163,8,0,0.0078125,0.3046875,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,all,20,-0.06301530842271105,-0.003962250524029043,6,14,0.023950576782226562,0.8143196105957031,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,jamming,3,-0.014278650367076798,0.0071307632195884985,2,1,1.0,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,meaconing,5,-0.07350850355440186,-0.004727969348659045,2,3,0.4375,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,spoof_jam,4,-0.07092578133996846,-0.052066922218271194,1,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,spoofing,8,-0.07077807177763848,-0.003962250524029043,1,7,0.078125,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,all,20,0.007746068265465117,0.013771153270455583,12,8,0.49800872802734375,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,jamming,3,0.058862807759003766,0.07081518343652893,2,1,0.75,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,meaconing,5,0.04815527204066374,0.06306233229212921,3,2,0.3125,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,spoof_jam,4,0.02222855949140029,0.02074732135320212,3,1,0.375,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,spoofing,8,-0.043919707017078605,-0.02012080729023008,4,4,0.546875,1.0,False
+roc_auc,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,all,20,0.30762268512528845,0.3524739653141627,19,1,3.814697265625e-06,0.00016021728515625,True
+roc_auc,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,jamming,3,0.15758843556055321,0.11528194682675819,3,0,0.25,1.0,False
+roc_auc,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,meaconing,5,0.37196578875222164,0.36202166350411147,5,0,0.0625,1.0,False
+roc_auc,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,spoof_jam,4,0.37327924487016645,0.3625134499046243,4,0,0.125,1.0,False
+roc_auc,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,spoofing,8,0.290842809072792,0.30926770783296953,7,1,0.015625,0.546875,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),all,20,0.06868084321043044,0.060955522741731216,20,0,1.9073486328125e-06,8.58306884765625e-05,True
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),jamming,3,0.05886774752707741,0.04279363886801901,3,0,0.25,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),meaconing,5,0.07581572061857936,0.07223276407337142,5,0,0.0625,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),spoof_jam,4,0.0763739022250684,0.07140866170966864,4,0,0.125,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),spoofing,8,0.0640549262042758,0.060955522741731216,8,0,0.0078125,0.3046875,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,20,0.1709226801120546,0.18402274145340375,20,0,1.9073486328125e-06,8.58306884765625e-05,True
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,jamming,3,0.1490633880052622,0.12782304173813602,3,0,0.25,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,5,0.18988925212977298,0.20702087286527526,5,0,0.0625,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoof_jam,4,0.23624165114813667,0.23426177179240704,4,0,0.125,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoofing,8,0.1346063216229867,0.11272505076038808,8,0,0.0078125,0.3046875,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),all,20,3.0464226370460756e-05,0.0,2,5,0.7353166906373405,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),jamming,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),meaconing,5,0.000780038735061328,0.0,1,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),spoof_jam,4,-0.0009380334458905237,-0.00043541742056540933,0,3,0.25,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling term vs equal-weight joint (C/N0),spoofing,8,5.7653079458083734e-05,0.0,1,2,1.0,1.0,False
+f1,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),all,20,0.02156470246954756,0.019933538020747862,15,0,0.0006549583433856954,0.028163208765584903,True
+f1,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),jamming,3,0.01028396145692296,0.004048132567016999,2,0,0.5,1.0,False
+f1,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),meaconing,5,0.043432395281463775,0.03819269490783522,5,0,0.0625,1.0,False
+f1,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),spoof_jam,4,0.013835590556867852,0.01657310795026315,3,0,0.25,1.0,False
+f1,D6_full_ckec_agc,D4_joint_agc,coupling term vs equal-weight joint (AGC),spoofing,8,0.015992228298173997,0.012230835239224226,5,0,0.0625,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),all,20,-0.001718984775281232,0.0,4,8,0.09948088075636449,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),jamming,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),meaconing,5,-0.0015810321101068837,0.0,1,2,0.5,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),spoof_jam,4,-0.00233466366172827,-0.003666043720232881,1,2,0.75,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real C_t vs shifted-secondary control (C/N0),spoofing,8,-0.002141985038522143,-0.00036296438426253186,2,4,0.3125,1.0,False
+f1,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),all,20,0.012659056074628274,0.011755982519065261,13,3,0.0016091949935643373,0.06597699473613783,False
+f1,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),jamming,3,0.0010893730237399313,0.0,1,1,1.0,1.0,False
+f1,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),meaconing,5,0.0273264668011156,0.03157831281723589,5,0,0.0625,1.0,False
+f1,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),spoof_jam,4,0.012468623388368717,0.012650040704393753,3,0,0.25,1.0,False
+f1,D6_full_ckec_agc,D6ctrl_shifted_agc,real C_t vs shifted-secondary control (AGC),spoofing,8,0.007925771857786605,0.005099492885438428,4,2,0.15625,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,all,20,-0.015702127493564616,0.0,4,8,0.11666446478102344,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,jamming,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,meaconing,5,0.00260343646097001,0.0,2,1,0.75,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,spoof_jam,4,-0.07771371318793649,-0.03598543564550061,0,3,0.25,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6(C/N0) vs best single-channel baseline,spoofing,8,-0.0020256099280495533,-0.0007254386073038965,2,4,0.21875,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,all,20,0.14124341989850775,0.08640957188994623,15,5,0.0019855499267578125,0.0794219970703125,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,jamming,3,0.2693965063969537,0.21451855774163126,3,0,0.25,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,meaconing,5,0.2127781335159483,0.16527370478983372,4,1,0.125,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,spoof_jam,4,0.11142275094698462,0.03104488485024587,3,1,0.25,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs C/N0 difference,spoofing,8,0.06338715092645172,0.014336835706334483,5,3,0.3828125,1.0,False
+f1,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,all,20,0.6043908695719191,0.5557083144649557,20,0,1.9073486328125e-06,8.58306884765625e-05,True
+f1,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,jamming,3,0.4415970594253289,0.4249188811763256,3,0,0.25,1.0,False
+f1,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,meaconing,5,0.6068062750938271,0.5558447745201855,5,0,0.0625,1.0,False
+f1,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,spoof_jam,4,0.5842035079485013,0.5269438492547192,4,0,0.125,1.0,False
+f1,D3a_agc_only_lvl,D3a_agc_only,AGC level vs AGC difference,spoofing,8,0.6740226007374068,0.765323256602108,8,0,0.0078125,0.3046875,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),all,20,0.021213844771096273,0.019933538020747862,15,1,0.0007764114990637485,0.03260928296067744,True
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),jamming,3,0.01028396145692296,0.004048132567016999,2,0,0.5,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),meaconing,5,0.043432395281463775,0.03819269490783522,5,0,0.0625,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),spoof_jam,4,0.013835590556867852,0.01657310795026315,3,0,0.25,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4 (v1 settings),spoofing,8,0.015115084052045792,0.012230835239224226,5,1,0.09375,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,20,0.256780914445963,0.24764666214161582,18,2,6.29425048828125e-05,0.00276947021484375,True
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,jamming,3,0.15051061432085466,0.08955355450654748,3,0,0.25,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,5,0.3919661658594583,0.44983634010809165,5,0,0.0625,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoof_jam,4,0.40147741155604966,0.4534413981241827,4,0,0.125,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoofing,8,0.13979324630440065,0.06991580900452454,6,2,0.1484375,1.0,False

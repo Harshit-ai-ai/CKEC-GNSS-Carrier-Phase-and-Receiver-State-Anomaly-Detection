@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ckec-gnss"
+version = "0.1.0"
+description = "Cross-Modal Kinematic-Electromagnetic Coupling for GNSS Spoofing Detection"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "scipy>=1.13",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.9",
+    "seaborn>=0.13",
+    "tqdm>=4.66",
+    "pyyaml>=6.0",
+    "loguru>=0.7",
+    "click>=8.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ckec*", "scripts*"]
+
+[project.scripts]
+ckec-audit    = "scripts.phase1_dataset_audit:main"
+ckec-baseline = "scripts.run_baselines:main"
+ckec-evaluate = "scripts.run_evaluation:main"
+ckec-ingest   = "scripts.ingest_real_data:main"

@@ -1,0 +1,15 @@
+Phase 1 Dataset Feasibility Audit — Revised Verdicts
+============================================================
+Audit Date : 2026-10-14
+
+Dataset : FGI-SpoofRepo
+Verdict : narrow
+Notes   : D1-D4 proceed testing Correlator Magnitude and Phase. D5 blocked by missing baseline.
+
+Dataset : Jammertest-2024
+Verdict : proceed
+Notes   : Primary real-data dataset. True hardware AGC and RINEX phase confirmed. D5 blocked.
+
+Dataset : Yunnan-2024
+Verdict : narrow
+Notes   : D1-D4 proceed testing C/N0 and Phase. Multi-constellation available. D5 blocked.

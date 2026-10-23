@@ -1,0 +1,4 @@
+dataset,licence_confirmed,hardware_agc,correlator_magnitude,carrier_to_noise_cn0,carrier_phase,attack_label,attack_onset_time,satellite_ephemeris,antenna_baseline,receiver_config,verdict,verdict_notes
+FGI-SpoofRepo,True,missing,available,available,available,derivable,available,available,missing,available,narrow,D1-D4 proceed testing Correlator Magnitude and Phase. D5 blocked by missing baseline.
+Jammertest-2024,True,available,unknown,available,available,available,available,available,missing,available,proceed,Primary real-data dataset. True hardware AGC and RINEX phase confirmed. D5 blocked.
+Yunnan-2024,True,missing,missing,available,available,available,available,available,missing,available,narrow,D1-D4 proceed testing C/N0 and Phase. Multi-constellation available. D5 blocked.

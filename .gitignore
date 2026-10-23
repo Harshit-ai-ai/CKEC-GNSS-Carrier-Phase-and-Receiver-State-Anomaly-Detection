@@ -1,0 +1,35 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Data — never commit raw recordings
+data/raw/
+data/processed/
+data/synthetic/
+*.bin
+*.dat
+*.iq
+*.s1p
+*.ubx
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Reports and figures (generated artefacts)
+reports/figures/*.png
+reports/figures/*.pdf
+reports/*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
