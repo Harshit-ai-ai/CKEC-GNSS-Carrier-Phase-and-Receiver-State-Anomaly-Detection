@@ -33,3 +33,7 @@ reports/*.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated, large diagnostic outputs
+reports/rawx_diagnostic/*.csv
+data/diagnostics/*.csv
