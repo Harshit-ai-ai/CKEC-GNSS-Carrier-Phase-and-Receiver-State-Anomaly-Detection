@@ -1,0 +1,113 @@
+# experiment configuration for CKEC-GNSS
+# Override any field via CLI --config flag or environment variables.
+
+experiment:
+  name: "ckec_v2_improved"
+  seed: 42
+  description: "V2 improved: MAD calibration, OU-process signals, multi-scale features, D7 CUSUM detector"
+
+paths:
+  data_raw:       "data/raw"
+  data_processed: "data/processed"
+  data_synthetic: "data/synthetic"
+  reports:        "reports"
+  figures:        "reports/figures"
+
+datasets:
+  # Candidate datasets to audit (Phase 1)
+  candidates:
+    - name: "FGI-SpoofRepo"
+      url: "https://researchportal.tuni.fi/en/datasets/fgis-gnss-spoofing-dataset-repository-fgi-spoofrepo/"
+      notes: "Real I/Q recordings, multiple spoofing scenarios. Inspect metadata before assuming field availability."
+    - name: "Tuni2025-GNSS"
+      url: ""
+      notes: "Candidate — confirm availability and licence."
+    - name: "CG-SpoofGNSS"
+      url: ""
+      notes: "Candidate — confirm availability and licence."
+
+  # Fields required by the CKEC detector (must be verified per dataset)
+  required_fields:
+    - field: "agc"
+      why: "Gain-control observations for electromagnetic modality"
+    - field: "carrier_phase"
+      why: "Spatial-phase observations"
+    - field: "attack_label"
+      why: "Ground truth for supervised evaluation"
+    - field: "attack_onset_time"
+      why: "Required to measure detection delay"
+    - field: "satellite_ephemeris"
+      why: "Geometry-aware phase prediction"
+    - field: "antenna_baseline"
+      why: "Inter-antenna phase difference calculation"
+    - field: "receiver_config"
+      why: "Understand measurement biases and AGC dynamics"
+
+preprocessing:
+  phase_unwrap: true
+  agc_smoothing_window: 5       # samples; 0 = no smoothing
+  alignment_tolerance_ms: 10    # max allowed time misalignment
+  missing_sample_strategy: "interpolate"   # or "drop"
+  calibration_split_seconds: 60  # length of benign calibration window
+
+detectors:
+  stabilisation_epsilon: 1.0e-4  # epsilon in ratio denominator
+
+  d1_raw_ratio:
+    enabled: true
+
+  d2_phase_only:
+    enabled: true
+
+  d3_agc_only:
+    enabled: true
+
+  d4_joint:
+    enabled: true
+    weights:
+      w_phase: 1.0
+      w_agc:   1.0
+
+  d5_geometry:
+    enabled: false          # enable only when ephemeris + baseline are available
+    carrier_wavelength_m: 0.1903   # L1 GPS, ~19 cm
+
+  d6_full_ckec:
+    enabled: false          # enable after d2–d5 are individually validated
+
+evaluation:
+  target_false_alarm_rate: 0.01  # 1 % — calibrate, do NOT assume
+  test_fraction: 0.25
+  val_fraction: 0.15
+  metrics:
+    - "detection_probability"
+    - "false_alarm_rate"
+    - "precision"
+    - "f1"
+    - "detection_delay_samples"
+    - "roc_auc"
+    - "pr_auc"
+    - "runtime_seconds"
+  report_confidence_intervals: true
+  ci_bootstrap_iterations: 1000
+
+simulation:
+  n_samples: 15000
+  sampling_rate_hz: 10
+  noise_std_phase_rad: 0.05
+  noise_std_agc_db: 0.15
+  spoofing_onset_sample: 7500
+  spoofing_types:
+    - "abrupt"
+    - "gradual"
+    - "stealth"
+  benign_disturbances:
+    - "multipath"
+    - "fading"
+    - "rayleigh_fading"
+    - "noise_only"
+  random_seeds: [42, 123, 777, 2024, 9999, 314, 1337]
+
+logging:
+  level: "INFO"
+  file: "reports/experiment.log"

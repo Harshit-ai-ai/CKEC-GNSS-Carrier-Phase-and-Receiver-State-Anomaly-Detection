@@ -1,42 +1,17 @@
 """
-scripts/evaluate_real_data.py   (v2 - provenance-aware, controlled comparisons)
-=============================================================================
-Evaluate detectors on the processed scenario CSVs in data/processed/real/.
+scripts/evaluate_real_data.py
+=============================
 
-DATA PROVENANCE
----------------
-Every output row carries a ``data_source`` value.  It is taken from a
-``data_source`` column in each input CSV if present, otherwise from the
-``--data-source`` CLI option (default: UNVERIFIED).  Whatever the data is
-(field recordings or simulation), the label travels with the results, and the
-banner printed at start/end says so.  Never describe results from SYNTHETIC or
-UNVERIFIED data as field-trial validation.
+Provenance-aware evaluation of GNSS anomaly detectors.
 
-What changed vs v1
-------------------
-1. Benign calibration statistics use *benign-labelled* samples only (v1 used the
-   first 60 s regardless of labels, which can include attack samples).
-2. Level-based features (z of smoothed AGC / C/N0 level) added next to the
-   first-difference features; a level step is invisible to a first difference.
-3. C/N0 is a first-class secondary modality: D4/D6 are run with BOTH AGC and
-   C/N0, and compared against the best single-channel baseline (D3c).
-4. D4 and D6 use IDENTICAL weights (1,1) so the cross-modal term is the only
-   difference.  Legacy D4/D6 (v1 settings) are kept for continuity.
-5. Control detectors: D6 with the secondary channel circularly shifted before
-   computing C_t.  If real C_t does not beat this control, the gain is not
-   coming from coupling.
-6. Block bootstrap (autocorrelation-aware) replaces the i.i.d. bootstrap, with
-   a correct two-sided p-value; default 2000 iterations.
-7. Scenario-level paired Wilcoxon tests with Holm correction, overall and per
-   attack class (jamming / meaconing / spoofing / spoofing+jamming).
-8. ROC-AUC / PR-AUC / detection delay reported next to F1; ``far_resolvable``
-   flags scenarios whose benign test set is too small to measure the target FAR.
-
-Outputs
--------
-  <output>                      per-scenario results
-  <output stem>_by_detector.csv mean metrics per detector (overall and per class)
-  <output stem>_paired_tests.csv scenario-level paired tests, Holm-adjusted
+Protocol:
+- Calibration uses only an initial, consecutive benign prefix.
+- Validation and test sets are chronological and disjoint.
+- Labels are converted to binary: 0 = benign, nonzero = attack.
+- Non-finite detector scores cause an explicit detector failure.
+- AUC uses the same complete test set as threshold-based metrics.
+- Each result records data provenance and detector status.
+- Bootstrap intervals are conditional on the fixed test predictions.
 """
 
 from __future__ import annotations
@@ -52,6 +27,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from sklearn.metrics import average_precision_score, roc_auc_score
+from phase_quality import flag_phase_discontinuities
 
 from ckec.detectors import (
     AGCOnlyDetector,
@@ -72,7 +48,7 @@ from ckec.utils import load_config, set_seed, setup_logging
 # ---------------------------------------------------------------------------
 
 class ColumnAbsDetector(BaseDetector):
-    """score = |column|  (used for level-based AGC / C/N0 detectors)."""
+    """Detector whose score is the absolute value of one feature column."""
 
     def __init__(self, column: str, name: str, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -84,21 +60,35 @@ class ColumnAbsDetector(BaseDetector):
         return X[self.column].abs().rename(self.name)
 
 
-def wilson_ci(successes: int, total: int, alpha: float = 0.05) -> tuple[float, float]:
+def wilson_ci(
+    successes: int,
+    total: int,
+    alpha: float = 0.05,
+) -> tuple[float, float]:
     """Wilson score confidence interval for a binomial proportion."""
-    if total == 0:
-        return (0.0, 1.0)
+    if total <= 0:
+        return 0.0, 1.0
+
     p_hat = successes / total
     z = stats.norm.ppf(1 - alpha / 2)
     denom = 1 + z**2 / total
+
     center = (p_hat + z**2 / (2 * total)) / denom
-    spread = z * np.sqrt(p_hat * (1 - p_hat) / total + z**2 / (4 * total**2)) / denom
-    return (max(0.0, center - spread), min(1.0, center + spread))
+    spread = z * np.sqrt(
+        p_hat * (1 - p_hat) / total
+        + z**2 / (4 * total**2)
+    ) / denom
+
+    return (
+        max(0.0, center - spread),
+        min(1.0, center + spread),
+    )
 
 
 def attack_class(name: str) -> str:
-    """Attack class parsed from the scenario name."""
+    """Infer attack class from the scenario filename."""
     n = name.lower()
+
     if "spoofing_+_jamming" in n or "spoofing+jamming" in n:
         return "spoof_jam"
     if "meaconing" in n:
@@ -107,28 +97,138 @@ def attack_class(name: str) -> str:
         return "spoofing"
     if "jamming" in n:
         return "jamming"
+
     return "other"
 
 
-def _benign_stats(series: pd.Series, labels: np.ndarray, n: int) -> tuple[float, float]:
-    """Mean/std from the first ``n`` BENIGN-labelled finite samples.
+def _binary_labels(values) -> np.ndarray:
+    """Convert labels to binary benign/attack labels after validation."""
+    numeric = pd.to_numeric(pd.Series(values), errors="raise").to_numpy(
+        dtype=float
+    )
 
-    Falls back to the first ``n`` finite samples (any label) only if fewer than
-    5 benign samples exist.
-    """
-    vals = series.to_numpy(dtype=float)
-    finite = np.isfinite(vals)
-    benign = vals[finite & (labels == 0)][:n]
-    if len(benign) < 5:
-        benign = vals[finite][:n]
-    if len(benign) < 2:
-        return 0.0, 1.0
-    return float(np.mean(benign)), float(np.std(benign, ddof=1))
+    if not np.isfinite(numeric).all():
+        raise ValueError("attack_label contains non-finite values.")
+
+    return (numeric != 0).astype(int)
 
 
-def _z(series: pd.Series, labels: np.ndarray, n: int, eps: float) -> pd.Series:
+def _initial_benign_prefix_length(labels: np.ndarray) -> int:
+    """Count consecutive benign samples at the beginning of a scenario."""
+    labels = np.asarray(labels).reshape(-1)
+
+    if len(labels) == 0:
+        raise ValueError("Calibration failure: empty scenario.")
+
+    attack_indices = np.flatnonzero(labels != 0)
+
+    if len(attack_indices) == 0:
+        return len(labels)
+
+    return int(attack_indices[0])
+
+
+def _choose_calibration_length(
+    labels: np.ndarray,
+    dt: float,
+    cal_seconds: float,
+    min_samples: int = 20,
+) -> int:
+    """Choose a calibration window wholly inside the initial benign prefix."""
+    if not np.isfinite(dt) or dt <= 0:
+        raise ValueError("Calibration failure: invalid sample interval.")
+
+    if not np.isfinite(cal_seconds) or cal_seconds <= 0:
+        raise ValueError(
+            "Calibration failure: cal_seconds must be positive."
+        )
+
+    prefix_n = _initial_benign_prefix_length(labels)
+
+    if prefix_n < min_samples:
+        raise ValueError(
+            "Calibration failure: initial benign prefix too short "
+            f"({prefix_n} samples; need at least {min_samples})."
+        )
+
+    requested_n = max(
+        min_samples,
+        int(np.ceil(cal_seconds / dt)),
+    )
+
+    return min(requested_n, prefix_n)
+
+
+def _benign_stats(
+    series: pd.Series,
+    labels: np.ndarray,
+    n: int,
+) -> tuple[float, float]:
+    """Estimate mean and sample SD from an initial benign-only prefix."""
+    values = np.asarray(series, dtype=float).reshape(-1)
+    labels = np.asarray(labels).reshape(-1)
+
+    if len(values) != len(labels):
+        raise ValueError(
+            "Calibration values and labels must have equal lengths."
+        )
+
+    if n < 2 or n > len(values):
+        raise ValueError(
+            "Calibration failure: invalid calibration window length."
+        )
+
+    prefix_labels = labels[:n]
+
+    if np.any(prefix_labels != 0):
+        raise ValueError(
+            "Calibration failure: attack-labelled samples occur "
+            "inside the initial calibration interval."
+        )
+
+    prefix_values = values[:n]
+    finite = np.isfinite(prefix_values)
+
+    if finite.sum() < 2:
+        raise ValueError(
+            "Calibration failure: fewer than two finite observations."
+        )
+
+    benign = prefix_values[finite]
+    mu = float(np.mean(benign))
+    sd = float(np.std(benign, ddof=1))
+
+    if not np.isfinite(mu) or not np.isfinite(sd) or sd <= 1e-8:
+        raise ValueError(
+            "Calibration failure: invalid or degenerate scale."
+        )
+
+    return mu, sd
+
+
+def _z(
+    series: pd.Series,
+    labels: np.ndarray,
+    n: int,
+    eps: float,
+) -> pd.Series:
     mu, sd = _benign_stats(series, labels, n)
     return (series - mu) / (sd + eps)
+
+
+def _try_z(
+    series: pd.Series,
+    labels: np.ndarray,
+    n: int,
+    eps: float,
+) -> tuple[pd.Series | None, str | None]:
+    """Standardize an optional feature, reporting calibration failures."""
+    try:
+        return _z(series, labels, n, eps), None
+    except ValueError as exc:
+        if "degenerate scale" in str(exc):
+            return None, str(exc)
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -141,117 +241,279 @@ def prepare_features(
     epsilon: float = 1e-4,
     cal_seconds: float = 60.0,
 ) -> pd.DataFrame:
-    """Build the per-sample feature table for one scenario."""
-    d = df.reset_index(drop=True).copy()
-    labels = d["attack_label"].to_numpy()
+    """Build per-sample features while preserving chronological order."""
+    required = {"attack_label", "carrier_phase"}
+    missing = required - set(df.columns)
 
-    dt = d["time_s"].diff().median() if "time_s" in d.columns else 1.0
-    if not dt or np.isnan(dt) or dt <= 0:
+    if missing:
+        raise ValueError(
+            f"Missing required columns: {sorted(missing)}"
+        )
+
+    d = df.reset_index(drop=True).copy()
+    labels = _binary_labels(d["attack_label"])
+
+    # Estimate sampling interval from positive timestamp differences.
+    if "time_s" in d.columns:
+        time_values = pd.to_numeric(
+            d["time_s"], errors="coerce"
+        ).to_numpy(dtype=float)
+
+        diffs = np.diff(time_values)
+        positive_diffs = diffs[
+            np.isfinite(diffs) & (diffs > 0)
+        ]
+
+        if len(positive_diffs) == 0:
+            raise ValueError(
+                "Calibration failure: no valid positive time intervals."
+            )
+
+        dt = float(np.median(positive_diffs))
+    else:
+        time_values = None
         dt = 1.0
-    cal_n = max(20, int(cal_seconds / dt))
-    cal_n = min(cal_n, max(20, len(d) // 4))
+
+    cal_n = _choose_calibration_length(
+        labels,
+        dt,
+        cal_seconds,
+    )
 
     feat = pd.DataFrame(index=d.index)
 
-    # Phase (first difference)
-    phase = d["carrier_phase"]
-    if phase.notna().sum() > 10:
-        d_phi = unwrap_phase(phase).diff()
-        feat["z_phi"] = _z(d_phi, labels, cal_n, epsilon)
-        feat["delta_phi"] = d_phi
+    # Carrier phase.
+    phase = pd.to_numeric(
+        d["carrier_phase"], errors="coerce"
+    )
+
+    if phase.notna().sum() <= 10:
+        raise ValueError(
+            "Insufficient finite carrier_phase observations."
+        )
+
+    # Phase differences are valid only across consecutive observations
+    # from the same reference satellite and within a bounded time interval.
+    d_phi = phase.diff()
+
+    if "ref_satellite" in d.columns:
+        ref_sat = d["ref_satellite"].astype("string")
+        same_satellite = (
+            ref_sat.notna()
+            & ref_sat.shift(1).notna()
+            & ref_sat.eq(ref_sat.shift(1))
+        )
+        d_phi = d_phi.where(same_satellite)
     else:
-        feat["z_phi"] = np.nan
-        feat["delta_phi"] = np.nan
+        raise ValueError(
+            "Missing ref_satellite: re-ingest the data with the "
+            "updated ingestion script before evaluating phase features."
+        )
 
-    # Hardware AGC: difference and level
+    if time_values is not None:
+        interval = pd.Series(time_values, index=d.index).diff()
+        valid_interval = (
+            np.isfinite(interval)
+            & (interval > 0)
+            & (interval <= 2.0)
+        )
+        d_phi = d_phi.where(valid_interval)
+
+    feat["z_phi"] = _z(
+        d_phi, labels, cal_n, epsilon
+    )
+    feat["delta_phi"] = d_phi
+
+    # Hardware AGC: difference and level.
     secondaries: list[str] = []
-    if "hardware_agc" in d.columns and d["hardware_agc"].notna().sum() > 10:
-        agc_s = smooth_agc(d["hardware_agc"], window=5)
-        d_agc = agc_s.diff()
-        feat["z_agc"] = _z(d_agc, labels, cal_n, epsilon)
-        feat["z_agc_lvl"] = _z(agc_s, labels, cal_n, epsilon)
-        feat["delta_agc"] = d_agc
-        secondaries.append("agc")
+    unavailable: dict[str, str] = {}
 
-    # C/N0: difference and level
-    if "cn0_db_hz" in d.columns and d["cn0_db_hz"].notna().sum() > 10:
-        cn0 = d["cn0_db_hz"]
-        cn0_s = cn0.rolling(5, min_periods=1).mean()
-        feat["z_cn0"] = _z(cn0.diff(), labels, cal_n, epsilon)
-        feat["z_cn0_lvl"] = _z(cn0_s, labels, cal_n, epsilon)
-        secondaries.append("cn0")
+    if "hardware_agc" in d.columns:
+        agc = pd.to_numeric(
+            d["hardware_agc"], errors="coerce"
+        )
 
-    # Cross-modal correlation (real) and shifted-secondary control
-    w = max(3, window_corr)
+        if agc.notna().sum() > 10:
+            agc_s = smooth_agc(agc, window=5)
+            d_agc = agc_s.diff()
+
+            z_agc, err_agc = _try_z(
+                d_agc, labels, cal_n, epsilon
+            )
+            z_agc_lvl, err_agc_lvl = _try_z(
+                agc_s, labels, cal_n, epsilon
+            )
+
+            if z_agc is not None and z_agc_lvl is not None:
+                feat["z_agc"] = z_agc
+                feat["z_agc_lvl"] = z_agc_lvl
+                feat["delta_agc"] = d_agc
+                secondaries.append("agc")
+            else:
+                reasons = [
+                    reason for reason in (err_agc, err_agc_lvl)
+                    if reason is not None
+                ]
+                unavailable["agc"] = "; ".join(reasons)
+
+        # C/N0: difference and level.
+    if "cn0_db_hz" in d.columns:
+        cn0 = pd.to_numeric(d["cn0_db_hz"], errors="coerce")
+
+        if cn0.notna().sum() > 10:
+            # Do not let a rolling window bridge missing measurements.
+            cn0_s = cn0.rolling(5, min_periods=3).mean()
+
+            z_cn0, err_cn0 = _try_z(
+                cn0.diff(), labels, cal_n, epsilon
+            )
+            z_cn0_lvl, err_cn0_lvl = _try_z(
+                cn0_s, labels, cal_n, epsilon
+            )
+
+            if z_cn0 is not None and z_cn0_lvl is not None:
+                feat["z_cn0"] = z_cn0
+                feat["z_cn0_lvl"] = z_cn0_lvl
+                feat["delta_cn0"] = cn0.diff()
+                secondaries.append("cn0")
+            else:
+                reasons = [
+                    reason for reason in (err_cn0, err_cn0_lvl)
+                    if reason is not None
+                ]
+                unavailable["cn0"] = "; ".join(reasons)
+
+    # Cross-modal correlation and shifted-secondary controls.
+    w = max(3, int(window_corr))
     lag = max(5 * w, len(d) // 3)
+
     for sec in secondaries:
         z_sec = feat[f"z_{sec}"]
-        feat[f"corr_{sec}"] = cross_modal_consistency(feat["z_phi"], z_sec, window=w)
-        # Non-circular lag: unavailable boundary values remain NaN.
-        # If the lag leaves too little overlap, the control is unavailable.
-        shifted = z_sec.shift(lag)
-        feat[f"corr_ctrl_{sec}"] = cross_modal_consistency(feat["z_phi"], shifted, window=w)
+
+        feat[f"corr_{sec}"] = cross_modal_consistency(
+            feat["z_phi"],
+            z_sec,
+            window=w,
+        )
+
+        feat[f"corr_ctrl_{sec}"] = cross_modal_consistency(
+            feat["z_phi"],
+            z_sec.shift(lag),
+            window=w,
+        )
 
     feat["attack_label"] = labels
-    if "time_s" in d.columns:
-        feat["time_s"] = d["time_s"].to_numpy()
+
+    if time_values is not None:
+        feat["time_s"] = time_values
+
     feat.attrs["secondaries"] = secondaries
-    return feat.dropna(subset=["z_phi"]).reset_index(drop=True)
+    feat.attrs["unavailable_modalities"] = unavailable
+
+    # Keep chronological positions intact. Drop only rows that lack the
+    # required phase feature; detector-specific missing values are validated
+    # when scores are produced.
+    return feat.loc[
+        feat["z_phi"].notna()
+    ].reset_index(drop=True)
 
 
 # ---------------------------------------------------------------------------
-# Split
+# Chronological split
 # ---------------------------------------------------------------------------
 
-def split_indices(feat_df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
-    """Return positional (val_idx, test_idx).
-
-    Val = benign calibration block; test = everything after it (benign tail +
-    attack + post-attack).  Same logic as v1's ``temporal_split``.
+def split_indices(
+    feat_df: pd.DataFrame,
+) -> tuple[np.ndarray, np.ndarray]:
     """
-    n = len(feat_df)
-    labels = feat_df["attack_label"].to_numpy()
-    benign = labels == 0
-    attack = ~benign
+    Return positional validation and test indices.
 
-    if not benign.any() or not attack.any():
-        return np.arange(int(n * 0.6), int(n * 0.8)), np.arange(int(n * 0.8), n)
+    Validation is a benign interval before the first attack. Test begins
+    after validation and must contain both benign and attack observations.
+    """
+    if feat_df.empty:
+        raise ValueError("Split failure: empty feature table.")
 
-    first_attack = int(np.where(attack)[0][0])
-    if first_attack >= 60:
-        train_end = int(first_attack * 0.4)
-        val_end = int(first_attack * 0.7)
-        return np.arange(train_end, val_end), np.arange(val_end, n)
+    labels = feat_df["attack_label"].to_numpy(dtype=int)
 
-    benign_idx = np.where(benign)[0]
-    cal_end = int(len(benign_idx) * 0.4)
-    cal = benign_idx[:cal_end]
-    mid = len(cal) // 2
-    val = cal[mid:]
-    cal_set = set(cal.tolist())
-    test = np.array([i for i in range(n) if i not in cal_set])
-    return val, test
+    if not np.any(labels == 1):
+        raise ValueError("Split failure: no attack samples.")
+
+    if not np.any(labels == 0):
+        raise ValueError("Split failure: no benign samples.")
+
+    attack_indices = np.flatnonzero(labels == 1)
+    first_attack = int(attack_indices[0])
+
+    if first_attack < 40:
+        raise ValueError(
+            "Split failure: initial benign prefix too short "
+            f"({first_attack} samples; need at least 40)."
+        )
+
+    val_start = max(20, int(first_attack * 0.4))
+    val_end = max(val_start + 1, int(first_attack * 0.7))
+    val_end = min(val_end, first_attack)
+
+    val_idx = np.arange(val_start, val_end, dtype=int)
+    test_idx = np.arange(val_end, len(feat_df), dtype=int)
+
+    if len(val_idx) < 2:
+        raise ValueError(
+            "Split failure: validation interval too short."
+        )
+
+    if len(test_idx) == 0:
+        raise ValueError("Split failure: empty test interval.")
+
+    if np.any(labels[val_idx] != 0):
+        raise ValueError(
+            "Split failure: validation contains attack samples."
+        )
+
+    if not np.any(labels[test_idx] == 0):
+        raise ValueError(
+            "Split failure: test contains no benign samples."
+        )
+
+    if not np.any(labels[test_idx] == 1):
+        raise ValueError(
+            "Split failure: test contains no attack samples."
+        )
+
+    return val_idx, test_idx
 
 
 def temporal_split(feat_df: pd.DataFrame):
-    """Backward-compatible wrapper returning (train, val, test) DataFrames."""
+    """Backward-compatible wrapper returning train, validation and test."""
     val_idx, test_idx = split_indices(feat_df)
-    return feat_df.iloc[:0], feat_df.iloc[val_idx], feat_df.iloc[test_idx]
+
+    return (
+        feat_df.iloc[:0],
+        feat_df.iloc[val_idx],
+        feat_df.iloc[test_idx],
+    )
 
 
 # ---------------------------------------------------------------------------
-# Metrics
+# Metrics and bootstrap
 # ---------------------------------------------------------------------------
 
-def _f1(y_t: np.ndarray, y_p: np.ndarray) -> float:
-    tp = int(((y_t == 1) & (y_p == 1)).sum())
-    fp = int(((y_t == 0) & (y_p == 1)).sum())
-    fn = int(((y_t == 1) & (y_p == 0)).sum())
+def _f1(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+) -> float:
+    tp = int(((y_true == 1) & (y_pred == 1)).sum())
+    fp = int(((y_true == 0) & (y_pred == 1)).sum())
+    fn = int(((y_true == 1) & (y_pred == 0)).sum())
+
     if tp == 0:
         return 0.0
-    prec = tp / (tp + fp)
-    rec = tp / (tp + fn)
-    return 2 * prec * rec / (prec + rec)
+
+    precision = tp / (tp + fp)
+    recall = tp / (tp + fn)
+
+    return 2 * precision * recall / (precision + recall)
 
 
 def block_bootstrap_f1_diff(
@@ -262,32 +524,74 @@ def block_bootstrap_f1_diff(
     block_len: int = 30,
     seed: int = 42,
 ) -> dict:
-    """Moving-block paired bootstrap for F1(A) - F1(B).
+    """Moving-block paired bootstrap conditional on fixed test predictions."""
+    y_true = np.asarray(y_true).reshape(-1)
+    y_pred_a = np.asarray(y_pred_a).reshape(-1)
+    y_pred_b = np.asarray(y_pred_b).reshape(-1)
 
-    Resamples contiguous blocks so serial correlation is preserved.  The
-    two-sided p-value is 2*min(P(d*<=0), P(d*>=0)) with +1 smoothing.
-    """
-    rng = np.random.default_rng(seed)
+    if not (
+        len(y_true) == len(y_pred_a) == len(y_pred_b)
+    ):
+        raise ValueError(
+            "Bootstrap inputs must have equal lengths."
+        )
+
     n = len(y_true)
-    L = int(max(1, min(block_len, n)))
-    n_blocks = math.ceil(n / L)
-    offs = np.arange(L)
 
-    observed = _f1(y_true, y_pred_a) - _f1(y_true, y_pred_b)
-    deltas = np.empty(n_iter)
+    if n == 0:
+        raise ValueError(
+            "Cannot bootstrap an empty test set."
+        )
+
+    if n_iter < 1:
+        raise ValueError("n_iter must be positive.")
+
+    rng = np.random.default_rng(seed)
+    length = int(max(1, min(block_len, n)))
+    n_blocks = math.ceil(n / length)
+    offsets = np.arange(length)
+
+    observed = (
+        _f1(y_true, y_pred_a)
+        - _f1(y_true, y_pred_b)
+    )
+
+    deltas = np.empty(n_iter, dtype=float)
+
     for i in range(n_iter):
-        starts = rng.integers(0, n - L + 1, size=n_blocks)
-        idx = (starts[:, None] + offs).ravel()[:n]
-        yt = y_true[idx]
-        deltas[i] = _f1(yt, y_pred_a[idx]) - _f1(yt, y_pred_b[idx])
+        starts = rng.integers(
+            0, n - length + 1, size=n_blocks
+        )
+
+        indices = (
+            starts[:, None] + offsets
+        ).ravel()[:n]
+
+        deltas[i] = (
+            _f1(y_true[indices], y_pred_a[indices])
+            - _f1(y_true[indices], y_pred_b[indices])
+        )
 
     lo, hi = np.percentile(deltas, [2.5, 97.5])
-    p = 2 * min((np.sum(deltas <= 0) + 1) / (n_iter + 1), (np.sum(deltas >= 0) + 1) / (n_iter + 1))
+
+    p_left = (
+        np.sum(deltas <= 0) + 1
+    ) / (n_iter + 1)
+
+    p_right = (
+        np.sum(deltas >= 0) + 1
+    ) / (n_iter + 1)
+
+    p_value = min(
+        1.0,
+        2 * min(p_left, p_right),
+    )
+
     return {
         "delta_f1": float(observed),
         "ci_lower": float(lo),
         "ci_upper": float(hi),
-        "p_value": float(min(1.0, p)),
+        "p_value": float(p_value),
         "significant": bool(lo > 0 or hi < 0),
     }
 
@@ -298,33 +602,108 @@ def _metrics(
     y_pred: np.ndarray,
     time_s: np.ndarray | None,
 ) -> dict:
+    """Calculate metrics on the same complete, finite-scored test set."""
+    y_test = np.asarray(y_test).reshape(-1)
+    scores = np.asarray(scores, dtype=float).reshape(-1)
+    y_pred = np.asarray(y_pred).reshape(-1)
+
+    if not (
+        len(y_test) == len(scores) == len(y_pred)
+    ):
+        raise ValueError(
+            "Metric inputs must have equal lengths."
+        )
+
+    if len(y_test) == 0:
+        raise ValueError(
+            "Cannot evaluate an empty test set."
+        )
+
+    if not np.isin(y_test, [0, 1]).all():
+        raise ValueError(
+            "y_test must contain binary labels 0 and 1."
+        )
+
+    if not np.isin(y_pred, [0, 1]).all():
+        raise ValueError(
+            "y_pred must contain binary predictions 0 and 1."
+        )
+
+    invalid = ~np.isfinite(scores)
+
+    if invalid.any():
+        raise ValueError(
+            f"Evaluation failure: {int(invalid.sum())}/{len(scores)} "
+            "test scores are non-finite."
+        )
+
+    if time_s is not None:
+        time_s = np.asarray(time_s, dtype=float).reshape(-1)
+
+        if len(time_s) != len(y_test):
+            raise ValueError(
+                "time_s must have the same length as y_test."
+            )
+
     tp = int(((y_test == 1) & (y_pred == 1)).sum())
     fp = int(((y_test == 0) & (y_pred == 1)).sum())
     fn = int(((y_test == 1) & (y_pred == 0)).sum())
     tn = int(((y_test == 0) & (y_pred == 0)).sum())
+
     recall = tp / (tp + fn) if (tp + fn) else 0.0
     precision = tp / (tp + fp) if (tp + fp) else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
-    far = fp / (fp + tn) if (fp + tn) else 0.0
+
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if precision + recall
+        else 0.0
+    )
+
+    far = fp / (fp + tn) if (fp + tn) else np.nan
     lo, hi = wilson_ci(fp, fp + tn)
 
-    roc = pr = np.nan
-    ok = np.isfinite(scores)
-    if ok.sum() > 0 and len(np.unique(y_test[ok])) == 2:
-        roc = roc_auc_score(y_test[ok], scores[ok])
-        pr = average_precision_score(y_test[ok], scores[ok])
+    roc_auc = np.nan
+    pr_auc = np.nan
+
+    if len(np.unique(y_test)) == 2:
+        roc_auc = float(
+            roc_auc_score(y_test, scores)
+        )
+        pr_auc = float(
+            average_precision_score(y_test, scores)
+        )
 
     delay = np.nan
-    if (y_test == 1).any():
-        a0 = int(np.argmax(y_test == 1))
-        alarms = np.where((y_pred == 1) & (np.arange(len(y_pred)) >= a0))[0]
+    attack_indices = np.flatnonzero(y_test == 1)
+
+    if len(attack_indices):
+        first_attack = int(attack_indices[0])
+
+        alarms = np.flatnonzero(
+            (y_pred == 1)
+            & (np.arange(len(y_pred)) >= first_attack)
+        )
+
         if len(alarms):
-            delay = float(time_s[alarms[0]] - time_s[a0]) if time_s is not None else float(alarms[0] - a0)
+            if time_s is not None:
+                delay = float(
+                    time_s[alarms[0]] - time_s[first_attack]
+                )
+            else:
+                delay = float(
+                    alarms[0] - first_attack
+                )
 
     return {
-        "recall": recall, "precision": precision, "f1": f1, "far": far,
-        "far_ci": f"[{lo:.4f}, {hi:.4f}]", "roc_auc": roc, "pr_auc": pr,
+        "recall": recall,
+        "precision": precision,
+        "f1": f1,
+        "far": far,
+        "far_ci": f"[{lo:.4f}, {hi:.4f}]",
+        "roc_auc": roc_auc,
+        "pr_auc": pr_auc,
         "delay_s": delay,
+        "n_invalid_scores": 0,
     }
 
 
@@ -333,16 +712,51 @@ def _metrics(
 # ---------------------------------------------------------------------------
 
 COMPARISONS = [
-    # (A, B, description)
-    ("D6_full_ckec_cn0", "D4_joint_cn0",        "coupling term vs equal-weight joint (C/N0)"),
-    ("D6_full_ckec_agc", "D4_joint_agc",        "coupling term vs equal-weight joint (AGC)"),
-    ("D6_full_ckec_cn0", "D6ctrl_shifted_cn0",  "real C_t vs shifted-secondary control (C/N0)"),
-    ("D6_full_ckec_agc", "D6ctrl_shifted_agc",  "real C_t vs shifted-secondary control (AGC)"),
-    ("D6_full_ckec_cn0", "D3c_cn0_only",        "D6(C/N0) vs best single-channel baseline"),
-    ("D3c_cn0_only_lvl", "D3c_cn0_only",        "C/N0 level vs C/N0 difference"),
-    ("D3a_agc_only_lvl", "D3a_agc_only",        "AGC level vs AGC difference"),
-    ("D6_full_ckec",     "D4_joint",            "legacy D6 vs legacy D4 (v1 settings)"),
-    ("D6_full_ckec",     "D2_phase_only",       "legacy D6 vs phase-only"),
+    (
+        "D6_full_ckec_cn0",
+        "D4_joint_cn0",
+        "coupling vs equal-weight joint (C/N0)",
+    ),
+    (
+        "D6_full_ckec_agc",
+        "D4_joint_agc",
+        "coupling vs equal-weight joint (AGC)",
+    ),
+    (
+        "D6_full_ckec_cn0",
+        "D6ctrl_shifted_cn0",
+        "real vs shifted control (C/N0)",
+    ),
+    (
+        "D6_full_ckec_agc",
+        "D6ctrl_shifted_agc",
+        "real vs shifted control (AGC)",
+    ),
+    (
+        "D6_full_ckec_cn0",
+        "D3c_cn0_only",
+        "D6 (C/N0) vs C/N0-only baseline",
+    ),
+    (
+        "D3c_cn0_only_lvl",
+        "D3c_cn0_only",
+        "C/N0 level vs difference",
+    ),
+    (
+        "D3a_agc_only_lvl",
+        "D3a_agc_only",
+        "AGC level vs difference",
+    ),
+    (
+        "D6_full_ckec",
+        "D4_joint",
+        "legacy D6 vs legacy D4",
+    ),
+    (
+        "D6_full_ckec",
+        "D2_phase_only",
+        "legacy D6 vs phase-only",
+    ),
 ]
 
 
@@ -358,276 +772,840 @@ def evaluate_scenario(
     min_benign_for_far: int = 200,
     seed: int = 42,
 ) -> dict:
-    feat = prepare_features(raw_df, window_corr=window_corr, epsilon=epsilon)
-    secs: list[str] = feat.attrs.get("secondaries", [])
+    feat = prepare_features(
+        raw_df,
+        window_corr=window_corr,
+        epsilon=epsilon,
+    )
+
+    secondaries: list[str] = feat.attrs.get(
+        "secondaries", []
+    )
+
     val_idx, test_idx = split_indices(feat)
 
-    y_val = (feat["attack_label"].to_numpy()[val_idx] != 0).astype(int)
-    y_test = (feat["attack_label"].to_numpy()[test_idx] != 0).astype(int)
-    time_test = feat["time_s"].to_numpy()[test_idx] if "time_s" in feat.columns else None
+    y_val = feat["attack_label"].to_numpy(
+        dtype=int
+    )[val_idx]
 
-    res: dict = {
+    y_test = feat["attack_label"].to_numpy(
+        dtype=int
+    )[test_idx]
+
+    time_test = (
+        feat["time_s"].to_numpy(dtype=float)[test_idx]
+        if "time_s" in feat.columns
+        else None
+    )
+
+    benign_test_n = int((y_test == 0).sum())
+
+    result: dict = {
         "scenario": scenario_name,
         "attack_class": attack_class(scenario_name),
         "n_test": int(len(test_idx)),
-        "n_benign_test": int((y_test == 0).sum()),
+        "n_benign_test": benign_test_n,
         "n_attack_test": int((y_test == 1).sum()),
-        "attack_prevalence_test": float(y_test.mean()) if len(y_test) else np.nan,
-        "far_resolvable": bool((y_test == 0).sum() >= min_benign_for_far),
+        "attack_prevalence_test": (
+            float(y_test.mean()) if len(y_test) else np.nan
+        ),
+        "far_resolvable": bool(
+            benign_test_n >= min_benign_for_far
+        ),
+        "far_resolution_note": (
+            "Heuristic sample-count threshold; inspect FAR confidence interval."
+        ),
     }
 
-    # Frames: base + (real C_t) + (shifted-control C_t) per secondary
-    frames: dict[str, pd.DataFrame] = {"base": feat}
-    for s in secs:
-        # Preserve unavailable correlations as NaN. The detector applies a
-        # neutral contribution when correlation is unavailable.
-        frames[f"c_{s}"] = feat.assign(cross_modal_corr=feat[f"corr_{s}"])
-        frames[f"ctrl_{s}"] = feat.assign(cross_modal_corr=feat[f"corr_ctrl_{s}"])
+    frames: dict[str, pd.DataFrame] = {
+        "base": feat
+    }
 
-    legacy_sec = "agc" if "agc" in secs else ("cn0" if "cn0" in secs else None)
+    for sec in secondaries:
+        frames[f"c_{sec}"] = feat.assign(
+            cross_modal_corr=feat[f"corr_{sec}"]
+        )
+
+        frames[f"ctrl_{sec}"] = feat.assign(
+            cross_modal_corr=feat[f"corr_ctrl_{sec}"]
+        )
+
+    legacy_sec = (
+        "agc"
+        if "agc" in secondaries
+        else "cn0"
+        if "cn0" in secondaries
+        else None
+    )
 
     specs: list[tuple[str, BaseDetector, str]] = []
+
     if "delta_agc" in feat.columns:
-        specs.append(("D1_raw_ratio", RawRatioDetector(secondary_col="delta_agc", epsilon=epsilon), "base"))
-    specs.append(("D2_phase_only", PhaseOnlyDetector(), "base"))
-    if "agc" in secs:
-        specs.append(("D3a_agc_only", AGCOnlyDetector(), "base"))
-        specs.append(("D3a_agc_only_lvl", ColumnAbsDetector("z_agc_lvl", "D3a_agc_only_lvl"), "base"))
-    if "cn0" in secs:
-        specs.append(("D3c_cn0_only", CN0Detector(), "base"))
-        specs.append(("D3c_cn0_only_lvl", ColumnAbsDetector("z_cn0_lvl", "D3c_cn0_only_lvl"), "base"))
-    if legacy_sec:  # v1 settings kept for continuity
-        specs.append(("D4_joint", JointDetector(secondary_col=f"z_{legacy_sec}"), "base"))
-        specs.append(("D6_full_ckec",
-                      FullCKECDetector(secondary_col=f"z_{legacy_sec}", w_phi=1.0, w_secondary=1.0, w_c=1.0),
-                      f"c_{legacy_sec}"))
-    for s in secs:  # controlled comparison: equal weights, only C_t differs
-        col = f"z_{s}"
-        specs.append((f"D4_joint_{s}", JointDetector(secondary_col=col, w_phi=1.0, w_secondary=1.0), "base"))
-        specs.append((f"D6_full_ckec_{s}",
-                      FullCKECDetector(secondary_col=col, w_phi=1.0, w_secondary=1.0, w_c=w_c), f"c_{s}"))
-        specs.append((f"D6ctrl_shifted_{s}",
-                      FullCKECDetector(secondary_col=col, w_phi=1.0, w_secondary=1.0, w_c=w_c), f"ctrl_{s}"))
+        specs.append((
+            "D1_raw_ratio",
+            RawRatioDetector(
+                secondary_col="delta_agc",
+                epsilon=epsilon,
+            ),
+            "base",
+        ))
 
-    preds: dict[str, np.ndarray] = {}
-    for name, det, fkey in specs:
-        frame = frames[fkey]
+    specs.append((
+        "D2_phase_only",
+        PhaseOnlyDetector(),
+        "base",
+    ))
+
+    if "agc" in secondaries:
+        specs.extend([
+            (
+                "D3a_agc_only",
+                AGCOnlyDetector(),
+                "base",
+            ),
+            (
+                "D3a_agc_only_lvl",
+                ColumnAbsDetector(
+                    "z_agc_lvl",
+                    "D3a_agc_only_lvl",
+                ),
+                "base",
+            ),
+        ])
+
+    if "cn0" in secondaries:
+        specs.extend([
+            (
+                "D3c_cn0_only",
+                CN0Detector(),
+                "base",
+            ),
+            (
+                "D3c_cn0_only_lvl",
+                ColumnAbsDetector(
+                    "z_cn0_lvl",
+                    "D3c_cn0_only_lvl",
+                ),
+                "base",
+            ),
+        ])
+
+    if legacy_sec:
+        specs.append((
+            "D4_joint",
+            JointDetector(
+                secondary_col=f"z_{legacy_sec}"
+            ),
+            "base",
+        ))
+
+        specs.append((
+            "D6_full_ckec",
+            FullCKECDetector(
+                secondary_col=f"z_{legacy_sec}",
+                w_phi=1.0,
+                w_secondary=1.0,
+                w_c=1.0,
+            ),
+            f"c_{legacy_sec}",
+        ))
+
+    for sec in secondaries:
+        specs.append((
+            f"D4_joint_{sec}",
+            JointDetector(
+                secondary_col=f"z_{sec}",
+                w_phi=1.0,
+                w_secondary=1.0,
+            ),
+            "base",
+        ))
+
+        specs.append((
+            f"D6_full_ckec_{sec}",
+            FullCKECDetector(
+                secondary_col=f"z_{sec}",
+                w_phi=1.0,
+                w_secondary=1.0,
+                w_c=w_c,
+            ),
+            f"c_{sec}",
+        ))
+
+        specs.append((
+            f"D6ctrl_shifted_{sec}",
+            FullCKECDetector(
+                secondary_col=f"z_{sec}",
+                w_phi=1.0,
+                w_secondary=1.0,
+                w_c=w_c,
+            ),
+            f"ctrl_{sec}",
+        ))
+
+    predictions: dict[str, np.ndarray] = {}
+
+    for name, detector, frame_key in specs:
         try:
-            det.fit(frame.iloc[val_idx], y_val, target_far=target_far)
-            scores = det.score(frame.iloc[test_idx]).to_numpy(dtype=float)
-            y_pred = (scores > det._threshold).astype(int)  # NaN -> 0
-            preds[name] = y_pred
-            m = _metrics(y_test, scores, y_pred, time_test)
-            for k, v in m.items():
-                res[f"{name}_{k}"] = v
-            res[f"{name}_status"] = "OK"
-        except Exception as e:  # keep going; record failure
-            res[f"{name}_status"] = f"FAILED: {e}"
-            res[f"{name}_f1"] = np.nan
+            frame = frames[frame_key]
 
-    for a, b, _ in COMPARISONS:
-        if a in preds and b in preds:
-            bs = block_bootstrap_f1_diff(
-                y_test, preds[a], preds[b], n_iter=bootstrap_iter, block_len=block_len, seed=seed
+            detector.fit(
+                frame.iloc[val_idx],
+                y_val,
+                target_far=target_far,
             )
-            tag = f"bootstrap_{a}_vs_{b}"
-            res[f"{tag}_delta_f1"] = bs["delta_f1"]
-            res[f"{tag}_ci"] = f"[{bs['ci_lower']:.4f}, {bs['ci_upper']:.4f}]"
-            res[f"{tag}_p_value"] = bs["p_value"]
-            res[f"{tag}_significant"] = bs["significant"]
-    return res
+
+            scores = np.asarray(
+                detector.score(frame.iloc[test_idx]),
+                dtype=float,
+            ).reshape(-1)
+
+            if len(scores) != len(y_test):
+                raise ValueError(
+                    "Detector returned the wrong number of scores."
+                )
+
+            if not np.isfinite(scores).all():
+                count = int((~np.isfinite(scores)).sum())
+                raise ValueError(
+                    f"{count} non-finite test scores."
+                )
+
+            threshold = getattr(
+                detector, "_threshold", None
+            )
+
+            if threshold is None or not np.isfinite(
+                float(threshold)
+            ):
+                raise ValueError(
+                    "Detector has no finite fitted threshold."
+                )
+
+            y_pred = (
+                scores > float(threshold)
+            ).astype(int)
+
+            metrics = _metrics(
+                y_test,
+                scores,
+                y_pred,
+                time_test,
+            )
+
+            predictions[name] = y_pred
+
+            for key, value in metrics.items():
+                result[f"{name}_{key}"] = value
+
+            result[f"{name}_status"] = "OK"
+
+        except Exception as exc:
+            result[f"{name}_status"] = (
+                f"FAILED: {type(exc).__name__}: {exc}"
+            )
+            result[f"{name}_f1"] = np.nan
+            result[f"{name}_roc_auc"] = np.nan
+            result[f"{name}_pr_auc"] = np.nan
+
+    # Paired bootstrap comparisons.
+    for a, b, _description in COMPARISONS:
+        tag = f"bootstrap_{a}_vs_{b}"
+
+        if a not in predictions or b not in predictions:
+            result[f"{tag}_status"] = (
+                "SKIPPED: one or both detectors failed"
+            )
+            continue
+
+        try:
+            bootstrap = block_bootstrap_f1_diff(
+                y_test,
+                predictions[a],
+                predictions[b],
+                n_iter=bootstrap_iter,
+                block_len=block_len,
+                seed=seed,
+            )
+
+            result[f"{tag}_delta_f1"] = bootstrap["delta_f1"]
+            result[f"{tag}_ci"] = (
+                f"[{bootstrap['ci_lower']:.4f}, "
+                f"{bootstrap['ci_upper']:.4f}]"
+            )
+            result[f"{tag}_p_value"] = bootstrap["p_value"]
+            result[f"{tag}_significant"] = bootstrap["significant"]
+            result[f"{tag}_status"] = "OK"
+
+        except Exception as exc:
+            result[f"{tag}_status"] = (
+                f"FAILED: {type(exc).__name__}: {exc}"
+            )
+
+    return result
 
 
 # ---------------------------------------------------------------------------
-# Aggregation
+# Aggregation and statistical tests
 # ---------------------------------------------------------------------------
 
-def holm(p: np.ndarray) -> np.ndarray:
-    """Holm-Bonferroni adjusted p-values (NaN-safe)."""
-    p = np.asarray(p, dtype=float)
-    out = np.full_like(p, np.nan)
-    ok = np.where(np.isfinite(p))[0]
-    if len(ok) == 0:
-        return out
-    order = ok[np.argsort(p[ok])]
+def holm(p_values: np.ndarray) -> np.ndarray:
+    """Holm-Bonferroni adjusted p-values, preserving NaNs."""
+    p_values = np.asarray(
+        p_values, dtype=float
+    )
+
+    adjusted = np.full_like(
+        p_values, np.nan
+    )
+
+    valid = np.flatnonzero(
+        np.isfinite(p_values)
+    )
+
+    if len(valid) == 0:
+        return adjusted
+
+    order = valid[
+        np.argsort(p_values[valid])
+    ]
+
     m = len(order)
     running = 0.0
-    for rank, i in enumerate(order):
-        running = max(running, (m - rank) * p[i])
-        out[i] = min(1.0, running)
-    return out
+
+    for rank, idx in enumerate(order):
+        running = max(
+            running,
+            (m - rank) * p_values[idx],
+        )
+        adjusted[idx] = min(
+            1.0, running
+        )
+
+    return adjusted
 
 
 def detector_names(df: pd.DataFrame) -> list[str]:
-    return sorted({c[: -len("_status")] for c in df.columns if c.endswith("_status")})
+    """Return detector names from their status columns."""
+    return sorted({
+        col[:-len("_status")]
+        for col in df.columns
+        if col.endswith("_status")
+        and not col.startswith("bootstrap_")
+    })
 
 
-def summarise_by_detector(df: pd.DataFrame) -> pd.DataFrame:
+def summarise_by_detector(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
     rows = []
-    groups = [("all", df)] + [(c, g) for c, g in df.groupby("attack_class")]
-    for gname, g in groups:
-        for det in detector_names(df):
-            if f"{det}_f1" not in g.columns:
+
+    groups = [("all", df)] + [
+        (str(name), group)
+        for name, group in df.groupby("attack_class")
+    ]
+
+    for group_name, group in groups:
+        for detector in detector_names(df):
+            f1_col = f"{detector}_f1"
+
+            if f1_col not in group.columns:
                 continue
+
+            roc_col = f"{detector}_roc_auc"
+            pr_col = f"{detector}_pr_auc"
+            delay_col = f"{detector}_delay_s"
+
             rows.append({
-                "group": gname, "detector": det, "n_scenarios": int(g[f"{det}_f1"].notna().sum()),
-                "mean_roc_auc": g.get(f"{det}_roc_auc", pd.Series(dtype=float)).mean(),
-                "mean_pr_auc": g.get(f"{det}_pr_auc", pd.Series(dtype=float)).mean(),
-                "mean_f1": g[f"{det}_f1"].mean(),
-                "median_delay_s": g.get(f"{det}_delay_s", pd.Series(dtype=float)).median(),
+                "group": group_name,
+                "detector": detector,
+                "n_scenarios": int(
+                    group[f1_col].notna().sum()
+                ),
+                "mean_roc_auc": (
+                    group[roc_col].mean()
+                    if roc_col in group.columns
+                    else np.nan
+                ),
+                "mean_pr_auc": (
+                    group[pr_col].mean()
+                    if pr_col in group.columns
+                    else np.nan
+                ),
+                "mean_f1": group[f1_col].mean(),
+                "median_delay_s": (
+                    group[delay_col].median()
+                    if delay_col in group.columns
+                    else np.nan
+                ),
             })
+
     return pd.DataFrame(rows)
 
 
-def paired_tests(df: pd.DataFrame) -> pd.DataFrame:
+def paired_tests(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
     rows = []
-    groups = [("all", df)] + [(c, g) for c, g in df.groupby("attack_class")]
+
+    groups = [("all", df)] + [
+        (str(name), group)
+        for name, group in df.groupby("attack_class")
+    ]
+
     for metric in ("roc_auc", "f1"):
         start = len(rows)
-        for a, b, desc in COMPARISONS:
-            ca, cb = f"{a}_{metric}", f"{b}_{metric}"
-            if ca not in df.columns or cb not in df.columns:
+
+        for a, b, description in COMPARISONS:
+            col_a = f"{a}_{metric}"
+            col_b = f"{b}_{metric}"
+
+            if col_a not in df.columns or col_b not in df.columns:
                 continue
-            for gname, g in groups:
-                d = (g[ca] - g[cb]).dropna().to_numpy()
-                if len(d) < 3:
+
+            for group_name, group in groups:
+                paired = group[[col_a, col_b]].dropna()
+                differences = (
+                    paired[col_a] - paired[col_b]
+                ).to_numpy(dtype=float)
+
+                if len(differences) < 3:
                     continue
-                if np.allclose(d, 0):
-                    p = 1.0
+
+                if np.allclose(differences, 0):
+                    p_value = 1.0
                 else:
                     try:
-                        p = float(stats.wilcoxon(d, zero_method="wilcox").pvalue)
+                        p_value = float(
+                            stats.wilcoxon(
+                                differences,
+                                zero_method="wilcox",
+                            ).pvalue
+                        )
                     except ValueError:
-                        p = np.nan
+                        p_value = np.nan
+
                 rows.append({
-                    "metric": metric, "A": a, "B": b, "comparison": desc, "group": gname,
-                    "n_scenarios": len(d), "mean_diff": float(d.mean()), "median_diff": float(np.median(d)),
-                    "n_A_better": int((d > 0).sum()), "n_B_better": int((d < 0).sum()),
-                    "wilcoxon_p": p,
+                    "metric": metric,
+                    "A": a,
+                    "B": b,
+                    "comparison": description,
+                    "group": group_name,
+                    "n_scenarios": len(differences),
+                    "mean_diff": float(
+                        differences.mean()
+                    ),
+                    "median_diff": float(
+                        np.median(differences)
+                    ),
+                    "n_A_better": int(
+                        (differences > 0).sum()
+                    ),
+                    "n_B_better": int(
+                        (differences < 0).sum()
+                    ),
+                    "wilcoxon_p": p_value,
                 })
-        if len(rows) > start:  # Holm across all tests for this metric
-            adj = holm(np.array([r["wilcoxon_p"] for r in rows[start:]]))
-            for r, q in zip(rows[start:], adj):
-                r["holm_p"] = float(q)
-                r["significant_holm_0.05"] = bool(q < 0.05) if np.isfinite(q) else False
+
+        current = rows[start:]
+
+        if current:
+            adjusted = holm(np.array([
+                row["wilcoxon_p"]
+                for row in current
+            ]))
+
+            for row, q_value in zip(
+                current, adjusted
+            ):
+                row["holm_p"] = float(q_value)
+                row["significant_holm_0.05"] = bool(
+                    q_value < 0.05
+                ) if np.isfinite(q_value) else False
+
     return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------
-# CLI
+# Provenance and CLI
 # ---------------------------------------------------------------------------
 
+def _source_for_file(
+    df: pd.DataFrame,
+    cli_source: str,
+) -> str:
+    """Return one unambiguous provenance label for a CSV."""
+    if "data_source" not in df.columns:
+        return cli_source.upper()
+
+    sources = (
+        df["data_source"]
+        .dropna()
+        .astype(str)
+        .str.upper()
+        .unique()
+    )
+
+    if len(sources) == 0:
+        return cli_source.upper()
+
+    if len(sources) != 1:
+        raise ValueError(
+            "Mixed data_source values in one CSV: "
+            f"{sources.tolist()}"
+        )
+
+    return str(sources[0])
+
+
 def _banner(sources: set[str]) -> str:
-    s = ", ".join(sorted(sources)) or "UNVERIFIED"
+    names = ", ".join(sorted(sources)) if sources else "UNVERIFIED"
     line = "=" * 80
-    msg = f"{line}\nDATA SOURCE: {s}\n"
-    if any(x.upper() != "REAL" for x in sources) or not sources:
-        msg += ("NOTE: data is not confirmed REAL. Do not describe these results as field-trial\n"
-                "validation. Label every table/figure/claim with the source above.\n")
-    return msg + line
+
+    message = f"{line}\nDATA SOURCE(S): {names}\n"
+
+    if not sources or any(source != "REAL" for source in sources):
+        message += (
+            "NOTE: data is not confirmed REAL. Do not describe these results "
+            "as field-trial validation.\n"
+            "Label every table, figure, and claim with its data source.\n"
+        )
+
+    return message + line
 
 
 @click.command()
 @click.option("--config", default="config.yaml", show_default=True)
-@click.option("--data-dir", default=None, help="Directory with processed CSVs (default: data/processed/real)")
-@click.option("--target-far", default=0.01, type=float, show_default=True)
-@click.option("--output", default="reports/real_evaluation_results.csv", show_default=True)
-@click.option("--bootstrap-iter", default=2000, type=int, show_default=True)
-@click.option("--block-len", default=30, type=int, show_default=True, help="Bootstrap block length (samples)")
-@click.option("--w-c", "w_c", default=1.0, type=float, show_default=True, help="Coupling weight for D6 variants")
-@click.option("--window-corr", default=20, type=int, show_default=True)
-@click.option("--min-benign-for-far", default=200, type=int, show_default=True,
-              help="Min benign test samples for the target FAR to be resolvable")
-@click.option("--data-source", default="UNVERIFIED",
-              type=click.Choice(["REAL", "SYNTHETIC", "UNVERIFIED"], case_sensitive=False),
-              show_default=True, help="Used when a CSV has no 'data_source' column")
-def main(config, data_dir, target_far, output, bootstrap_iter, block_len, w_c, window_corr,
-         min_benign_for_far, data_source):
-    """Evaluate detectors on processed scenario CSVs with provenance-stamped results."""
+@click.option(
+    "--data-dir",
+    default=None,
+    help="Directory with processed scenario CSVs.",
+)
+@click.option(
+    "--target-far",
+    default=0.01,
+    type=click.FloatRange(min=0.0, max=1.0, min_open=True),
+    show_default=True,
+)
+@click.option(
+    "--output",
+    default="reports/real_evaluation_results.csv",
+    show_default=True,
+)
+@click.option(
+    "--bootstrap-iter",
+    default=2000,
+    type=click.IntRange(min=1),
+    show_default=True,
+)
+@click.option(
+    "--block-len",
+    default=30,
+    type=click.IntRange(min=1),
+    show_default=True,
+)
+@click.option(
+    "--w-c",
+    "w_c",
+    default=1.0,
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--window-corr",
+    default=20,
+    type=click.IntRange(min=3),
+    show_default=True,
+)
+@click.option(
+    "--min-benign-for-far",
+    default=200,
+    type=click.IntRange(min=1),
+    show_default=True,
+)
+@click.option(
+    "--data-source",
+    default="UNVERIFIED",
+    type=click.Choice(
+        ["REAL", "SYNTHETIC", "UNVERIFIED"],
+        case_sensitive=False,
+    ),
+    show_default=True,
+    help="Source used when a CSV has no data_source column.",
+)
+def main(
+    config,
+    data_dir,
+    target_far,
+    output,
+    bootstrap_iter,
+    block_len,
+    w_c,
+    window_corr,
+    min_benign_for_far,
+    data_source,
+):
+    """Evaluate detectors on processed scenario CSVs."""
     cfg = load_config(config)
-    log = setup_logging(level=cfg["logging"]["level"], log_file=cfg["logging"]["file"])
+
+    log = setup_logging(
+        level=cfg["logging"]["level"],
+        log_file=cfg["logging"]["file"],
+    )
+
     seed = cfg["experiment"].get("seed", 42)
     set_seed(seed)
 
-    data_path = Path(data_dir) if data_dir else Path("data/processed/real")
+    data_path = (
+        Path(data_dir)
+        if data_dir
+        else Path("data/processed/real")
+    )
+
     if not data_path.exists():
-        log.error("Data directory not found: %s", data_path)
-        return
-    csv_files = [f for f in sorted(data_path.glob("*.csv")) if f.name != "ingestion_summary.csv"]
+        raise click.ClickException(
+            f"Data directory not found: {data_path}"
+        )
+
+    csv_files = [
+        path
+        for path in sorted(data_path.glob("*.csv"))
+        if path.name != "ingestion_summary.csv"
+    ]
+
     if not csv_files:
-        log.error("No CSV files found in %s", data_path)
-        return
+        raise click.ClickException(
+            f"No scenario CSV files found in {data_path}"
+        )
 
     print(_banner({data_source.upper()}))
-    print(f"Found {len(csv_files)} scenario files in {data_path}\n")
+    print(
+        f"Found {len(csv_files)} scenario files in {data_path}\n"
+    )
 
-    all_results: list[dict] = []
+    results: list[dict] = []
     sources: set[str] = set()
-    for f in csv_files:
-        print(f"--- {f.stem} ---")
+
+    for path in csv_files:
+        print(f"--- {path.stem} ---")
+
         try:
-            df = pd.read_csv(f)
-            src = str(df["data_source"].iloc[0]).upper() if "data_source" in df.columns and len(df) else data_source.upper()
-            sources.add(src)
-            n_b = int((df["attack_label"] == 0).sum())
-            n_a = int((df["attack_label"] != 0).sum())
-            print(f"  {len(df)} samples ({n_b} benign, {n_a} attack), source={src}")
-            if n_b < 20 or n_a < 10:
-                print("  [SKIP] too few benign or attack samples")
+            df = pd.read_csv(path)
+
+            if df.empty:
+                raise ValueError("CSV is empty.")
+
+            required = {
+                "attack_label",
+                "carrier_phase",
+            }
+
+            missing = required - set(df.columns)
+
+            if missing:
+                raise ValueError(
+                    f"Missing required columns: {sorted(missing)}"
+                )
+
+            source = _source_for_file(
+                df, data_source
+            )
+            sources.add(source)
+
+            labels = _binary_labels(
+                df["attack_label"]
+            )
+
+            benign_n = int(
+                (labels == 0).sum()
+            )
+            attack_n = int(
+                (labels == 1).sum()
+            )
+
+            print(
+                f"  {len(df)} samples "
+                f"({benign_n} benign, {attack_n} attack), "
+                f"source={source}"
+            )
+
+            if benign_n < 20 or attack_n < 10:
+                print(
+                    "  [SKIP] too few benign or attack samples"
+                )
                 continue
 
-            r = evaluate_scenario(
-                f.stem, df, target_far=target_far, window_corr=window_corr, w_c=w_c,
-                bootstrap_iter=bootstrap_iter, block_len=block_len,
-                min_benign_for_far=min_benign_for_far, seed=seed,
+            result = evaluate_scenario(
+                path.stem,
+                df,
+                target_far=target_far,
+                window_corr=window_corr,
+                w_c=w_c,
+                bootstrap_iter=bootstrap_iter,
+                block_len=block_len,
+                min_benign_for_far=min_benign_for_far,
+                seed=seed,
             )
-            r["data_source"] = src
-            if not r["far_resolvable"]:
-                print(f"  [WARN] only {r['n_benign_test']} benign test samples: FAR={target_far:.0%} not resolvable")
-            for det in ("D2_phase_only", "D3a_agc_only_lvl", "D3c_cn0_only", "D3c_cn0_only_lvl",
-                        "D4_joint_cn0", "D6_full_ckec_cn0", "D6ctrl_shifted_cn0"):
-                if f"{det}_f1" in r and pd.notna(r[f"{det}_f1"]):
-                    print(f"  {det:22s} AUC={r.get(f'{det}_roc_auc', np.nan):.3f} "
-                          f"F1={r[f'{det}_f1']:.3f} FAR={r.get(f'{det}_far', np.nan):.3f}")
-            all_results.append(r)
-        except Exception as e:
-            import traceback
-            print(f"  [ERROR] {e}")
-            traceback.print_exc()
 
-    if not all_results:
-        print("No scenarios were successfully evaluated.")
-        return
+            result["data_source"] = source
 
-    out = Path(output)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    res_df = pd.DataFrame(all_results)
-    res_df.to_csv(out, index=False)
+            if not result["far_resolvable"]:
+                print(
+                    f"  [WARN] {result['n_benign_test']} benign test "
+                    "samples; inspect the FAR confidence interval."
+                )
 
-    by_det = summarise_by_detector(res_df)
-    tests = paired_tests(res_df)
-    by_det.to_csv(out.with_name(out.stem + "_by_detector.csv"), index=False)
-    tests.to_csv(out.with_name(out.stem + "_paired_tests.csv"), index=False)
+            display_detectors = [
+                "D2_phase_only",
+                "D3a_agc_only_lvl",
+                "D3c_cn0_only",
+                "D3c_cn0_only_lvl",
+                "D4_joint_cn0",
+                "D6_full_ckec_cn0",
+                "D6ctrl_shifted_cn0",
+            ]
+
+            for detector in display_detectors:
+                f1_key = f"{detector}_f1"
+
+                if (
+                    f1_key in result
+                    and pd.notna(result[f1_key])
+                ):
+                    print(
+                        f"  {detector:22s} "
+                        f"AUC={result.get(f'{detector}_roc_auc', np.nan):.3f} "
+                        f"F1={result[f1_key]:.3f} "
+                        f"FAR={result.get(f'{detector}_far', np.nan):.3f} "
+                        f"status={result.get(f'{detector}_status', 'UNKNOWN')}"
+                    )
+
+            results.append(result)
+
+        except Exception as exc:
+            print(
+                f"  [ERROR] {type(exc).__name__}: {exc}"
+            )
+
+    if not results:
+        raise click.ClickException(
+            "No scenarios were successfully evaluated."
+        )
+
+    output_path = Path(output)
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    result_df = pd.DataFrame(results)
+    result_df.to_csv(
+        output_path,
+        index=False,
+    )
+
+    by_detector = summarise_by_detector(
+        result_df
+    )
+    tests = paired_tests(
+        result_df
+    )
+
+    by_detector.to_csv(
+        output_path.with_name(
+            output_path.stem + "_by_detector.csv"
+        ),
+        index=False,
+    )
+
+    tests.to_csv(
+        output_path.with_name(
+            output_path.stem + "_paired_tests.csv"
+        ),
+        index=False,
+    )
 
     print("\n" + _banner(sources))
-    print(f"{len(all_results)} scenarios evaluated -> {out}")
-    print("\n--- MEAN METRICS (all scenarios) ---")
-    show = by_det[by_det["group"] == "all"].sort_values("mean_roc_auc", ascending=False)
-    print(show[["detector", "n_scenarios", "mean_roc_auc", "mean_pr_auc", "mean_f1", "median_delay_s"]]
-          .round(3).to_string(index=False))
+    print(
+        f"{len(results)} scenarios evaluated -> {output_path}"
+    )
 
-    print("\n--- SCENARIO-LEVEL PAIRED TESTS, ROC-AUC, group=all (Holm-adjusted) ---")
-    t = tests[(tests["metric"] == "roc_auc") & (tests["group"] == "all")]
-    if len(t):
-        print(t[["A", "B", "n_scenarios", "mean_diff", "n_A_better", "n_B_better", "holm_p"]]
-              .round(4).to_string(index=False))
-        ctrl = t[t["B"].str.startswith("D6ctrl")]
-        if len(ctrl) and not ctrl["significant_holm_0.05"].any():
-            print("\n  NOTE: real C_t does not significantly beat the shifted-secondary control;"
-                  "\n  the coupling term's gain cannot be attributed to cross-modal coupling.")
-        base = t[t["B"] == "D3c_cn0_only"]
-        if len(base) and (base["mean_diff"] <= 0).all():
-            print("\n  NOTE: D6 does not beat the C/N0-only baseline on mean AUC.")
+    print("\n--- MEAN METRICS (all scenarios) ---")
+
+    if not by_detector.empty:
+        show = by_detector[
+            by_detector["group"] == "all"
+        ].sort_values(
+            "mean_roc_auc",
+            ascending=False,
+            na_position="last",
+        )
+
+        print(
+            show[
+                [
+                    "detector",
+                    "n_scenarios",
+                    "mean_roc_auc",
+                    "mean_pr_auc",
+                    "mean_f1",
+                    "median_delay_s",
+                ]
+            ].round(3).to_string(index=False)
+        )
+
+    print(
+        "\n--- SCENARIO-LEVEL PAIRED TESTS, "
+        "ROC-AUC, group=all (Holm-adjusted) ---"
+    )
+
+    if not tests.empty:
+        selected = tests[
+            (tests["metric"] == "roc_auc")
+            & (tests["group"] == "all")
+        ]
+
+        if len(selected):
+            print(
+                selected[
+                    [
+                        "A",
+                        "B",
+                        "n_scenarios",
+                        "mean_diff",
+                        "n_A_better",
+                        "n_B_better",
+                        "holm_p",
+                    ]
+                ].round(4).to_string(index=False)
+            )
+
+            controls = selected[
+                selected["B"].str.startswith("D6ctrl")
+            ]
+
+            if (
+                len(controls)
+                and not controls["significant_holm_0.05"].any()
+            ):
+                print(
+                    "\nNOTE: the real-coupling detector did not "
+                    "significantly beat the shifted control. This does "
+                    "not prove that coupling carries no information."
+                )
+
+            baseline = selected[
+                selected["B"] == "D3c_cn0_only"
+            ]
+
+            if (
+                len(baseline)
+                and (baseline["mean_diff"] <= 0).all()
+            ):
+                print(
+                    "\nNOTE: D6 did not beat the C/N0-only baseline "
+                    "on mean AUC."
+                )
 
 
 if __name__ == "__main__":

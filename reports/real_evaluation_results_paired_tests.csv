@@ -1,0 +1,49 @@
+metric,A,B,comparison,group,n_scenarios,mean_diff,median_diff,n_A_better,n_B_better,wilcoxon_p,holm_p,significant_holm_0.05
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),all,13,-0.07589025556550782,-0.0016599797862240084,2,8,0.013671875,0.314453125,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),meaconing,3,-0.13964752567693747,0.0,0,1,1.0,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),spoof_jam,4,-0.04695938340148198,-0.016375312112877627,2,2,0.625,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),spoofing,5,-0.0686661522243952,-0.0016599797862240084,0,4,0.125,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),all,13,-0.0556903614506917,0.0,5,5,0.4921875,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),meaconing,3,-0.13964752567693747,0.0,0,1,1.0,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),spoof_jam,4,-0.024607940401293882,0.00019408941689391668,3,1,0.875,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),spoofing,5,-0.009376725536036934,0.0,2,2,1.0,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,all,13,-0.07135689814138217,-0.02732102272727266,2,11,0.001220703125,0.029296875,True
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,meaconing,3,-0.12473525505452059,-0.01669038583175242,0,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,spoof_jam,4,-0.056777693812807395,-0.04134024376708134,2,2,0.625,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,spoofing,5,-0.05491971837016148,-0.02732102272727266,0,5,0.0625,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,all,13,0.045539840742074594,0.020641787387828958,9,4,0.068115234375,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,meaconing,3,0.022715114377642436,-0.003929349517584724,1,2,1.0,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,spoof_jam,4,0.02685419780482881,0.030078566525764572,3,1,0.25,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,spoofing,5,0.04024815134202466,0.014902926735381627,4,1,0.4375,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,all,13,-0.024124528110848302,0.0,6,6,0.7333984375,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,meaconing,3,-0.13884370952682157,0.0,1,1,1.0,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,spoof_jam,4,-0.04347886260510336,-0.009454254792973071,1,3,0.375,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,spoofing,5,0.001813876986391305,0.0005568181818182971,3,2,1.0,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,13,0.1905304803702279,0.1241952773268814,11,2,0.026611328125,0.58544921875,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,3,0.040221448806935865,0.0074252873563218635,2,1,0.75,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoof_jam,4,0.37233003921134455,0.44815484837761194,3,1,0.25,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoofing,5,0.1008527040405807,0.06359659090909098,5,0,0.0625,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),all,13,0.00019022016881231404,0.0,4,3,0.578125,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),meaconing,3,-0.000286891384187619,0.0,0,1,1.0,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),spoof_jam,4,0.00022592931463477628,0.00013873644552309106,2,1,0.75,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),spoofing,5,8.243583016849243e-05,0.0,1,1,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),all,13,-0.007002216323097025,0.0,3,4,0.8125,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),meaconing,3,-0.000286891384187619,0.0,0,1,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),spoof_jam,4,-0.020427101355795008,0.0004748905318331387,2,1,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),spoofing,5,-0.0016919465249036869,0.0,1,2,0.75,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,all,13,-0.019687828488291478,-0.04097016268382225,4,8,0.10986328125,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,meaconing,3,-0.0805911299045103,-0.0953805851213897,0,3,0.25,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,spoof_jam,4,-0.03255956641312516,-0.03542321234506912,1,2,0.5,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,spoofing,5,0.03225714267332016,0.0025473272540817993,3,2,1.0,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,all,13,0.13094849820684956,0.03550371529997998,9,4,0.039794921875,0.915283203125,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,meaconing,3,0.14393983428659585,0.16438687701180665,2,1,0.5,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,spoof_jam,4,0.1123676665800043,0.03104488485024587,3,1,0.25,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,spoofing,5,0.07190036919415563,0.015837221627575837,3,2,0.625,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,all,13,0.004989841140324358,0.0,6,4,0.4921875,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,meaconing,3,0.01740149525314309,0.02363040806213923,2,0,0.5,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,spoof_jam,4,-0.0006235671519457253,-0.00025187729480991017,1,2,0.5,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,spoofing,5,-0.0015278317823909204,0.0,2,2,0.625,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,13,0.32974879380509214,0.20882967884614456,12,1,0.001220703125,0.029296875,True
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,3,0.30252873813951503,0.20882967884614456,3,0,0.25,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoof_jam,4,0.6967973717512038,0.6898611188871668,4,0,0.125,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,spoofing,5,0.11244863047773868,0.11114851360164935,4,1,0.1875,1.0,False

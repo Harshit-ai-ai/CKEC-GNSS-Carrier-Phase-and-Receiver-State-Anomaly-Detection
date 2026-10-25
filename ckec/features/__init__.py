@@ -41,9 +41,17 @@ log = logging.getLogger(__name__)
 # Phase features
 # ---------------------------------------------------------------------------
 
-def delta_phase(phase: pd.Series, periods: int = 1) -> pd.Series:
-    """First difference of unwrapped carrier-phase (cycles or rad)."""
-    return temporal_difference(phase, periods=periods).rename("delta_phi")
+def delta_phase(
+    phase: pd.Series,
+    periods: int = 1,
+    unit: str = "cycles",
+) -> pd.Series:
+    """Difference carrier phase, preserving the input unit."""
+    if unit not in {"cycles", "radians"}:
+        raise ValueError("unit must be 'cycles' or 'radians'")
+    return temporal_difference(phase, periods=periods).rename(
+        f"delta_phi_{unit}"
+    )
 
 
 def normalised_phase(

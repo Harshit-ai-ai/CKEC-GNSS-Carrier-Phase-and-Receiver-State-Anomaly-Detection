@@ -69,13 +69,48 @@ class BaseDetector(ABC):
         Returns self for method chaining.
         """
         scores = self.score(X_val)
-        y_arr = np.asarray(y_val)
-        benign_scores = scores.iloc[y_arr == 0].dropna()
-        if len(benign_scores) == 0:
-            raise RuntimeError("No benign samples in validation set — cannot calibrate threshold.")
-        self._threshold = float(np.quantile(benign_scores, 1.0 - target_far))
-        log.info("%s: threshold calibrated to %.4f at target FAR=%.3f",
-                 self.name, self._threshold, target_far)
+        score_values = np.asarray(scores, dtype=float).reshape(-1)
+        y_arr = np.asarray(y_val).reshape(-1)
+        if not np.isin(y_arr, [0, 1]).all():
+            raise ValueError("Calibration labels must be binary (0 or 1).")
+
+        if len(score_values) != len(y_arr):
+            raise ValueError(
+                "Calibration scores and labels must have equal lengths."
+            )
+
+        if not np.isfinite(target_far) or not 0.0 < target_far < 1.0:
+            raise ValueError("target_far must be strictly between 0 and 1.")
+
+        benign_mask = y_arr == 0
+        benign_values = score_values[benign_mask]
+        finite_benign = benign_values[np.isfinite(benign_values)]
+
+        if len(finite_benign) != len(benign_values):
+            raise RuntimeError(
+                "Calibration failed: benign scores contain non-finite values."
+            )
+
+        if len(finite_benign) == 0:
+            raise RuntimeError(
+                "No benign samples in validation set — cannot calibrate threshold."
+            )
+
+        self._threshold = float(
+            np.quantile(finite_benign, 1.0 - target_far)
+        )
+
+        if not np.isfinite(self._threshold):
+            self._threshold = None
+            raise RuntimeError("Calibration produced a non-finite threshold.")
+
+        log.info(
+            "%s: threshold=%.6g, finite benign calibration n=%d, target FAR=%.3f",
+            self.name,
+            self._threshold,
+            len(finite_benign),
+            target_far,
+        )
         return self
 
     def predict(self, X: pd.DataFrame) -> pd.Series:

@@ -1,0 +1,25 @@
+metric,A,B,comparison,group,n_scenarios,mean_diff,median_diff,n_A_better,n_B_better,wilcoxon_p,holm_p,significant_holm_0.05
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),all,3,-4.355034220922723e-05,-2.541726679661238e-05,0,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),meaconing,3,-4.355034220922723e-05,-2.541726679661238e-05,0,3,0.25,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),all,3,4.871357035566663e-06,8.47242226553746e-06,2,1,0.75,1.0,False
+roc_auc,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),meaconing,3,4.871357035566663e-06,8.47242226553746e-06,2,1,0.75,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,all,3,-0.04005305436900045,-0.013212742523087462,1,2,0.75,1.0,False
+roc_auc,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,meaconing,3,-0.04005305436900045,-0.013212742523087462,1,2,0.75,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,all,3,0.20969478066678682,0.20987279267810455,3,0,0.25,1.0,False
+roc_auc,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,meaconing,3,0.20969478066678682,0.20987279267810455,3,0,0.25,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,all,3,0.00025847879146094027,0.0002457002457002533,2,1,0.5,1.0,False
+roc_auc,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,meaconing,3,0.00025847879146094027,0.0002457002457002533,2,1,0.5,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,3,0.0021047647677406855,0.0021065371055724036,3,0,0.25,1.0,False
+roc_auc,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,3,0.0021047647677406855,0.0021065371055724036,3,0,0.25,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),all,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D4_joint_cn0,coupling vs equal-weight joint (C/N0),meaconing,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),all,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D6ctrl_shifted_cn0,real vs shifted control (C/N0),meaconing,3,0.0,0.0,0,0,1.0,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,all,3,0.2962315911279304,0.2512244237852277,3,0,0.25,1.0,False
+f1,D6_full_ckec_cn0,D3c_cn0_only,D6 (C/N0) vs C/N0-only baseline,meaconing,3,0.2962315911279304,0.2512244237852277,3,0,0.25,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,all,3,0.3541046179385174,0.40230584987618245,3,0,0.25,1.0,False
+f1,D3c_cn0_only_lvl,D3c_cn0_only,C/N0 level vs difference,meaconing,3,0.3541046179385174,0.40230584987618245,3,0,0.25,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,all,3,-0.0012062367016488034,0.0,0,1,1.0,1.0,False
+f1,D6_full_ckec,D4_joint,legacy D6 vs legacy D4,meaconing,3,-0.0012062367016488034,0.0,0,1,1.0,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,all,3,0.0021081053305804787,0.00029954080357497137,2,0,0.5,1.0,False
+f1,D6_full_ckec,D2_phase_only,legacy D6 vs phase-only,meaconing,3,0.0021081053305804787,0.00029954080357497137,2,0,0.5,1.0,False

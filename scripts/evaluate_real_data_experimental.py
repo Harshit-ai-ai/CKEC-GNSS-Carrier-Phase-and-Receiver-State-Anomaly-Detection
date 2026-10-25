@@ -192,7 +192,7 @@ def prepare_features(
     # Phase (first difference)
     phase = d["carrier_phase"]
     if phase.notna().sum() > 10:
-        d_phi = unwrap_phase(phase).diff()
+        d_phi = phase.diff()
         feat["z_phi"] = _z(d_phi, labels, cal_n, epsilon)
         feat["delta_phi"] = d_phi
     else:
@@ -500,8 +500,8 @@ def evaluate_scenario(
         raise ValueError(
             "Validation has no valid benign rows for threshold calibration."
         )
-    if not np.any(y_test == 0) or not np.any(y_test == 1):
-        raise ValueError("Test must contain valid benign and attack rows.")
+    if not np.any(y_test == 1):
+        raise ValueError("Test has no valid attack rows.")
 
     time_test = feat["time_s"].to_numpy()[test_idx] if "time_s" in feat.columns else None
 
@@ -806,83 +806,85 @@ def main(config, data_dir, target_far, output, bootstrap_iter, block_len, w_c, w
 
 
 
+
+
+
 def strict_chronological_split(
     feat_df: pd.DataFrame,
     calibration_fraction: float = 0.67,
     min_calibration_benign: int = 100,
     min_validation_benign: int = 50,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Split chronologically using the initial contiguous benign prefix.
-
-    Calibration and validation contain only initial benign samples.
-    Calibration is used for feature normalization; validation is used
-    for detector threshold calibration. Test starts at the first attack
-    and retains the original recording order.
-
-    Scenarios that cannot support this protocol are rejected rather than
-    relabelled or rearranged.
-    """
-    n = len(feat_df)
-
-    if n == 0:
+    """Split chronologically using the initial benign prefix."""
+    if len(feat_df) == 0:
         raise ValueError("Scenario is empty.")
+
+    if "attack_label" not in feat_df.columns:
+        raise ValueError("Missing attack_label column.")
 
     if not 0 < calibration_fraction < 1:
         raise ValueError("calibration_fraction must be between 0 and 1.")
 
     labels = feat_df["attack_label"].to_numpy()
 
-    if not np.isfinite(labels.astype(float)).all():
-        raise ValueError("Attack labels contain missing or non-finite values.")
+    try:
+        numeric_labels = labels.astype(float)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Attack labels must be numeric.") from exc
 
-    attack_positions = np.flatnonzero(labels != 0)
+    if not np.isfinite(numeric_labels).all():
+        raise ValueError("Attack labels contain non-finite values.")
 
-    if len(attack_positions) == 0:
-        raise ValueError("Scenario contains no attack-labelled samples.")
+    attack_positions = np.flatnonzero(numeric_labels != 0)
+    if attack_positions.size == 0:
+        raise ValueError("Scenario contains no attack samples.")
 
     first_attack = int(attack_positions[0])
 
-    # All rows before the first attack must be benign.
-    prefix_len = first_attack
-    required_prefix = min_calibration_benign + min_validation_benign
-
-    if prefix_len < required_prefix:
+    if first_attack < min_calibration_benign:
         raise ValueError(
-            f"Initial benign prefix too short ({prefix_len} rows); "
+            "Attack samples occur too early for the calibration interval."
+        )
+
+    required_prefix = min_calibration_benign + min_validation_benign
+    if first_attack < required_prefix:
+        raise ValueError(
+            f"Calibration/validation prefix too short ({first_attack} rows); "
             f"need at least {required_prefix}."
         )
 
-    cal_end = int(prefix_len * calibration_fraction)
-
-    # Enforce the minimum sizes without allowing calibration to consume
-    # the minimum required validation block.
+    # Calibration and validation contain only the initial benign prefix.
+    cal_end = int(first_attack * calibration_fraction)
     cal_end = max(cal_end, min_calibration_benign)
-    cal_end = min(cal_end, prefix_len - min_validation_benign)
+    cal_end = min(cal_end, first_attack - min_validation_benign)
 
     cal_idx = np.arange(0, cal_end)
-    val_idx = np.arange(cal_end, prefix_len)
-    test_idx = np.arange(first_attack, n)
+    val_idx = np.arange(cal_end, first_attack)
 
-    if len(cal_idx) < min_calibration_benign:
-        raise ValueError("Too few rows for benign calibration.")
+    # The test period begins at the first attack and includes subsequent rows.
+    test_idx = np.arange(first_attack, len(feat_df))
 
-    if len(val_idx) < min_validation_benign:
-        raise ValueError("Too few rows for benign validation.")
+    if not np.all(numeric_labels[cal_idx] == 0):
+        raise ValueError("Attack samples found in calibration interval.")
 
-    if not np.all(labels[cal_idx] == 0):
-        raise ValueError("Calibration contains attack-labelled samples.")
+    if not np.all(numeric_labels[val_idx] == 0):
+        raise ValueError("Attack samples found in validation interval.")
 
-    if not np.all(labels[val_idx] == 0):
-        raise ValueError("Validation contains attack-labelled samples.")
+    test_labels = numeric_labels[test_idx]
 
-    test_labels = labels[test_idx]
+    if not np.any(test_labels != 0):
+        raise ValueError("Test period contains no attack samples.")
 
-    if not np.any(test_labels == 0) or not np.any(test_labels != 0):
+    if not np.any(test_labels == 0):
         raise ValueError(
             "Test period must contain both benign and attack samples."
         )
 
+    if np.count_nonzero(test_labels != 0) < 50:
+        raise ValueError("Test period contains too few attack samples.")
+
     return cal_idx, val_idx, test_idx
+
 
 if __name__ == "__main__":
     main()

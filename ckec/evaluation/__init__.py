@@ -143,6 +143,7 @@ class DetectorResult:
 # Core metric functions
 # ---------------------------------------------------------------------------
 
+
 def compute_metrics(
     y_true: np.ndarray,
     y_pred: np.ndarray,
@@ -152,31 +153,45 @@ def compute_metrics(
     target_far: float = 0.01,
 ) -> DetectorResult:
     """
-    Compute all evaluation metrics for a single detector output.
+    Compute evaluation metrics for a single detector output.
 
-    Parameters
-    ----------
-    y_true        : ground-truth binary labels (0 = benign, 1 = attack)
-    y_pred        : binary predictions from the threshold-calibrated detector
-    scores        : raw continuous anomaly scores
-    detector_name : identifier for logging
-    split         : "val" or "test"
-    target_far    : the FAR target used during threshold calibration
+    Labels must be binary: 0 = benign, 1 = attack.
+    Scores must be finite. Thresholds must be calibrated on validation data.
     """
-    y_true = np.asarray(y_true)
-    y_pred = np.asarray(y_pred)
-    scores = np.asarray(scores)
+    y_true = np.asarray(y_true).reshape(-1)
+    y_pred = np.asarray(y_pred).reshape(-1)
+    scores = np.asarray(scores, dtype=float).reshape(-1)
+
+    # Validate inputs before calculating metrics.
+    if not (len(y_true) == len(y_pred) == len(scores)):
+        raise ValueError(
+            "y_true, y_pred, and scores must have identical lengths."
+        )
+
+    if len(y_true) == 0:
+        raise ValueError("Cannot evaluate an empty dataset.")
+
+    if not np.isin(y_true, [0, 1]).all():
+        raise ValueError(
+            "Expected binary labels (0=benign, 1=attack). "
+            "Map multi-class labels explicitly before evaluation."
+        )
+
+    if not np.isin(y_pred, [0, 1]).all():
+        raise ValueError("y_pred must contain only 0 and 1.")
+
+    if not np.isfinite(scores).all():
+        raise ValueError(
+            "Anomaly scores contain NaN or infinity. "
+            "Report the invalid-score count and evaluation failure "
+            "instead of silently filtering samples."
+        )
 
     benign_mask = y_true == 0
-    attack_mask = y_true != 0
+    attack_mask = y_true == 1
 
-    n_benign = benign_mask.sum()
-    n_attack = attack_mask.sum()
-
-    if n_benign == 0:
-        log.warning("%s: no benign samples in %s split.", detector_name, split)
-    if n_attack == 0:
-        log.warning("%s: no attack samples in %s split.", detector_name, split)
+    n_benign = int(benign_mask.sum())
+    n_attack = int(attack_mask.sum())
 
     result = DetectorResult(
         detector_name=detector_name,
@@ -184,28 +199,42 @@ def compute_metrics(
         target_far=target_far,
     )
 
-    # Detection probability (= recall on attack samples)
-    if n_attack > 0:
-        result.detection_probability = float(
-            y_pred[attack_mask].sum() / n_attack
+    if n_benign == 0:
+        log.warning(
+            "%s: no benign samples in %s split.",
+            detector_name, split,
         )
+
+    if n_attack == 0:
+        log.warning(
+            "%s: no attack samples in %s split.",
+            detector_name, split,
+        )
+
+    # Detection probability and false-alarm rate.
+    if n_attack > 0:
+        result.detection_probability = float(y_pred[attack_mask].mean())
         result.recall = result.detection_probability
 
-    # False-alarm rate
     if n_benign > 0:
-        result.false_alarm_rate = float(y_pred[benign_mask].sum() / n_benign)
+        result.false_alarm_rate = float(y_pred[benign_mask].mean())
 
-    # Precision / F1
-    y_true_bin = (y_true != 0).astype(int)
-    y_pred_bin = (y_pred != 0).astype(int)
-    if y_pred.sum() > 0:
-        result.precision = float(precision_score(y_true_bin, y_pred_bin, zero_division=0))
-        result.f1 = float(f1_score(y_true_bin, y_pred_bin, zero_division=0))
+    # Precision and F1.
+    if np.any(y_pred == 1):
+        result.precision = float(
+            precision_score(y_true, y_pred, zero_division=0)
+        )
+        result.f1 = float(
+            f1_score(y_true, y_pred, zero_division=0)
+        )
+    else:
+        result.precision = 0.0
+        result.f1 = 0.0
 
-    # ROC AUC — requires both classes
-    if n_benign > 0 and n_attack > 0 and not np.isnan(scores).all():
-        result.roc_auc = float(roc_auc_score(y_true_bin, scores))
-        result.pr_auc = float(average_precision_score(y_true_bin, scores))
+    # AUC metrics require both classes.
+    if n_benign > 0 and n_attack > 0:
+        result.roc_auc = float(roc_auc_score(y_true, scores))
+        result.pr_auc = float(average_precision_score(y_true, scores))
 
     return result
 

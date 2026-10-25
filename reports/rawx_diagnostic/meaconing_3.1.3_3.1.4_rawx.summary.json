@@ -1,0 +1,16 @@
+{
+  "input": "data/raw/jammertest/Meaconing/dynamic/Very High Power (\u226510W)/Bands_E1_L1_L2/3.1.3,3.1.4/240910_072935.ubx",
+  "input_bytes": 25394187,
+  "checksum_valid_ubx_frames": 32464,
+  "invalid_sync_candidates": 0,
+  "rxm_rawx_messages": 9871,
+  "measurement_rows": 517577,
+  "gps_time_min": "2024-09-10T07:29:52.392+00:00",
+  "gps_time_max": "2024-09-10T08:02:46.392+00:00",
+  "utc_time_est_min": "2024-09-10T07:29:34.392+00:00",
+  "utc_time_est_max": "2024-09-10T08:02:28.392+00:00",
+  "pseudorange_valid_rows": 517577,
+  "carrier_phase_valid_rows": 454576,
+  "output_csv": "reports/rawx_diagnostic/meaconing_3.1.3_3.1.4_rawx.csv",
+  "warning": "Recovery export only; verify message structure and signal mapping before scientific evaluation. No attack labels inferred."
+}

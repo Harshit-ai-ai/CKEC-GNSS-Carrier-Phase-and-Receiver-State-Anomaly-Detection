@@ -1,0 +1,940 @@
+[1mdiff --git a/scripts/ingest_jammertest_real.py b/scripts/ingest_jammertest_real.py[m
+[1mindex d10de9c..8990250 100644[m
+[1m--- a/scripts/ingest_jammertest_real.py[m
+[1m+++ b/scripts/ingest_jammertest_real.py[m
+[36m@@ -251,10 +251,10 @@[m [mdef align_and_label([m
+     rinex_epochs = rinex_epochs.sort_values("timestamp").reset_index(drop=True)[m
+ [m
+     merged = pd.merge_asof([m
+[31m-        mon_rf,[m
+[31m-        rinex_epochs,[m
+[32m+[m[32m        mon_rf.sort_values("timestamp"),[m
+[32m+[m[32m        rinex_epochs.sort_values("timestamp"),[m
+         on="timestamp",[m
+[31m-        tolerance=pd.Timedelta("2s"),[m
+[32m+[m[32m        tolerance=pd.Timedelta("250ms"),[m
+         direction="nearest",[m
+     )[m
+ [m
+[1mdiff --git a/scripts/ingest_real_data.py b/scripts/ingest_real_data.py[m
+[1mindex b4d5325..c490766 100644[m
+[1m--- a/scripts/ingest_real_data.py[m
+[1m+++ b/scripts/ingest_real_data.py[m
+[36m@@ -1,277 +1,703 @@[m
+[32m+[m
+ """[m
+ scripts/ingest_real_data.py[m
+ ===========================[m
+[31m-CLI pipeline to ingest raw datasets (Jammertest-2024, Yunnan-2024, FGI-SpoofRepo)[m
+[31m-into standardized, aligned time-series in data/processed/.[m
+ [m
+[31m-Usage:[m
+[31m-    python scripts/ingest_real_data.py[m
+[31m-    python scripts/ingest_real_data.py --dataset jammertest --generate-samples[m
+[31m-    python scripts/ingest_real_data.py --dataset all[m
+[32m+[m[32mIngest real GNSS recordings into standardized time-series CSV files.[m
+[32m+[m
+[32m+[m[32mJammertest:[m
+[32m+[m[32m    - Discovers nested scenario directories recursively.[m
+[32m+[m[32m    - Keeps RF, RINEX, and metadata files from the same scenario together.[m
+[32m+[m[32m    - Aligns RF and RINEX data by timestamp, never by row position.[m
+[32m+[m[32m    - Labels attack intervals from scenario.json.[m
+[32m+[m[32m    - Supports an explicit timestamp interpretation option.[m
+[32m+[m[32m    - Writes new outputs to a dedicated directory.[m
+[32m+[m
+[32m+[m[32mIMPORTANT:[m
+[32m+[m[32m    The timestamp interpretation of some Jammertest 2024 scenario.json files[m
+[32m+[m[32m    is uncertain. By default, timestamps are treated literally as UTC.[m
+[32m+[m[32m    Use --jammertest-clock cest only if you intentionally want to interpret[m
+[32m+[m[32m    the logged timestamps as CEST wall time and convert to the recording[m
+[32m+[m[32m    clock (CEST - 2 hours + 18 seconds for the 2024 GPS time convention).[m
+[32m+[m
+[32m+[m[32mThis script does not establish that the logged attack intervals are exact[m
+[32m+[m[32mon-air transmission intervals.[m
+ """[m
+ [m
+ from __future__ import annotations[m
+ [m
+[32m+[m[32mimport json[m
+[32m+[m[32mimport logging[m
+[32m+[m[32mimport re[m
+ import sys[m
+ from pathlib import Path[m
+[31m-[m
+[31m-# Add project root to path[m
+[31m-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))[m
+[32m+[m[32mfrom typing import Any[m
+ [m
+ import click[m
+ import numpy as np[m
+ import pandas as pd[m
+ [m
+[31m-from ckec.utils import setup_logging, load_config, get_path[m
+[31m-from ckec.ingestion.parsers import ([m
+[31m-    parse_jammertest_session,[m
+[31m-    parse_fgi_session,[m
+[31m-    parse_yunnan_session,[m
+[32m+[m[32mPROJECT_ROOT = Path(__file__).resolve().parent.parent[m
+[32m+[m[32msys.path.insert(0, str(PROJECT_ROOT))[m
+[32m+[m
+[32m+[m[32mfrom ckec.utils import setup_logging, load_config  # noqa: E402[m
+[32m+[m
+[32m+[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m[32m# Column-name helpers[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m
+[32m+[m[32mTIME_CANDIDATES = ([m
+[32m+[m[32m    "real_time",[m
+[32m+[m[32m    "time",[m
+[32m+[m[32m    "timestamp",[m
+[32m+[m[32m    "datetime",[m
+[32m+[m[32m    "utc_time",[m
+[32m+[m[32m    "gps_time",[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mAGC_CANDIDATES = ([m
+[32m+[m[32m    "agcCnt",[m
+[32m+[m[32m    "agc_cnt",[m
+[32m+[m[32m    "AGC",[m
+[32m+[m[32m    "agc",[m
+[32m+[m[32m    "agc1",[m
+[32m+[m[32m    "AGC1",[m
+[32m+[m[32m    "agc_1",[m
+[32m+[m[32m    "AGC_1",[m
+[32m+[m[32m    "agcCnt1",[m
+[32m+[m[32m    "agcCnt_1",[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mCN0_CANDIDATES = ([m
+[32m+[m[32m    "cn0_db_hz",[m
+[32m+[m[32m    "cn0",[m
+[32m+[m[32m    "cno",[m
+[32m+[m[32m    "CNo",[m
+[32m+[m[32m    "C/N0",[m
+[32m+[m[32m    "snr",[m
+[32m+[m[32m    "snr_L1",[m
+[32m+[m[32m    "S1C",[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mCORR_CANDIDATES = ([m
+[32m+[m[32m    "corr_magnitude",[m
+[32m+[m[32m    "correlation_magnitude",[m
+[32m+[m[32m    "corrMag",[m
+ )[m
+ [m
+[32m+[m[32mJAM_CANDIDATES = ([m
+[32m+[m[32m    "jamInd",[m
+[32m+[m[32m    "jam_ind",[m
+[32m+[m[32m    "jamInd_01",[m
+[32m+[m[32m    "jamInd_02",[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mPHASE_CANDIDATES = ([m
+[32m+[m[32m    "carrier_phase",[m
+[32m+[m[32m    "carrier_phase_L1",[m
+[32m+[m[32m    "L1C",[m
+[32m+[m[32m    "L1X",[m
+[32m+[m[32m    "L1W",[m
+[32m+[m[32m    "L1P",[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mLABEL_COLUMN = "attack_label"[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef first_existing_column([m
+[32m+[m[32m    df: pd.DataFrame,[m
+[32m+[m[32m    candidates: tuple[str, ...],[m
+[32m+[m[32m) -> str | None:[m
+[32m+[m[32m    """Return the first matching column, case-insensitively."""[m
+[32m+[m[32m    by_lower = {str(col).lower(): str(col) for col in df.columns}[m
+[32m+[m
+[32m+[m[32m    for candidate in candidates:[m
+[32m+[m[32m        if candidate in df.columns:[m
+[32m+[m[32m            return candidate[m
+[32m+[m
+[32m+[m[32m        found = by_lower.get(candidate.lower())[m
+[32m+[m[32m        if found is not None:[m
+[32m+[m[32m            return found[m
+[32m+[m
+[32m+[m[32m    return None[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef read_csv_checked(path: Path) -> pd.DataFrame:[m
+[32m+[m[32m    """Read a CSV and reject empty or unreadable files."""[m
+[32m+[m[32m    df = pd.read_csv(path, low_memory=False)[m
+ [m
+[31m-def generate_sample_jammertest_data(raw_dir: Path) -> tuple[Path, Path]:[m
+[32m+[m[32m    if df.empty:[m
+[32m+[m[32m        raise ValueError(f"CSV has no rows: {path}")[m
+[32m+[m
+[32m+[m[32m    if len(df.columns) == 0:[m
+[32m+[m[32m        raise ValueError(f"CSV has no columns: {path}")[m
+[32m+[m
+[32m+[m[32m    return df[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef parse_timestamp_column([m
+[32m+[m[32m    df: pd.DataFrame,[m
+[32m+[m[32m    path: Path,[m
+[32m+[m[32m    preferred: str | None = None,[m
+[32m+[m[32m) -> tuple[pd.DataFrame, str]:[m
+[32m+[m[32m    """Parse the best available timestamp column without guessing its clock."""[m
+[32m+[m[32m    candidates = (preferred,) if preferred else TIME_CANDIDATES[m
+[32m+[m[32m    col = first_existing_column(df, tuple(c for c in candidates if c))[m
+[32m+[m
+[32m+[m[32m    if col is None:[m
+[32m+[m[32m        raise ValueError([m
+[32m+[m[32m            f"No recognized timestamp column in {path}. "[m
+[32m+[m[32m            f"Available columns: {list(df.columns)}"[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m    out = df.copy()[m
+[32m+[m[32m    out["_time"] = pd.to_datetime(out[col], errors="coerce", utc=True)[m
+[32m+[m
+[32m+[m[32m    valid_count = int(out["_time"].notna().sum())[m
+[32m+[m[32m    if valid_count == 0:[m
+[32m+[m[32m        raise ValueError([m
+[32m+[m[32m            f"Could not parse any timestamps from {path}:{col}"[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m    out = out.loc[out["_time"].notna()].copy()[m
+[32m+[m[32m    out = out.sort_values("_time")[m
+[32m+[m
+[32m+[m[32m    # Do not silently choose one of multiple measurements at the same time.[m
+[32m+[m[32m    # Duplicates are resolved explicitly later during aggregation.[m
+[32m+[m[32m    return out, col[m
+[32m+[m
+[32m+[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m[32m# Jammertest timestamp and attack-label handling[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m
+[32m+[m[32mdef convert_event_timestamp([m
+[32m+[m[32m    value: str,[m
+[32m+[m[32m    clock_interpretation: str,[m
+[32m+[m[32m) -> pd.Timestamp:[m
+     """[m
+[31m-    Generate SYNTHETIC schema-compliant sample files that mimic the Jammertest-2024[m
+[31m-    column structure for pipeline verification ONLY.[m
+[31m-[m
+[31m-    WARNING: This output is NOT real data. It uses a hardcoded step-function[m
+[31m-    attack (AGC 8000→4200, phase quadratic drift, labels at t≥1000). Any metrics[m
+[31m-    computed from this data are artefacts of the simulation, NOT evidence of[m
+[31m-    detector performance on real spoofing events. Output is written to[m
+[31m-    data/synthetic/schema_samples/, never to data/processed/.[m
+[32m+[m[32m    Convert a scenario event timestamp into the recording timestamp clock.[m
+[32m+[m
+[32m+[m[32m    literal:[m
+[32m+[m[32m        Respect the timestamp's stated timezone (including a trailing Z).[m
+[32m+[m
+[32m+[m[32m    cest:[m
+[32m+[m[32m        Interpret the timestamp's displayed wall-clock value as CEST,[m
+[32m+[m[32m        despite a possible Z suffix, and map to the recording's GPS-time[m
+[32m+[m[32m        representation using CEST - 2 hours + 18 seconds for September 2024.[m
+[32m+[m
+[32m+[m[32m    The resulting timestamp is timezone-aware UTC-shaped datetime data.[m
+[32m+[m[32m    In this project, the recording clock may represent GPS time numerically;[m
+[32m+[m[32m    this is a representation convention, not a claim that GPS time equals UTC.[m
+     """[m
+[31m-    # Write to synthetic/, never to processed/[m
+[31m-    synthetic_dir = raw_dir.parent / "synthetic" / "schema_samples" / "jammertest"[m
+[31m-    synthetic_dir.mkdir(parents=True, exist_ok=True)[m
+[32m+[m[32m    parsed = pd.Timestamp(value)[m
+[32m+[m
+[32m+[m[32m    if clock_interpretation == "literal":[m
+[32m+[m[32m        if parsed.tzinfo is None:[m
+[32m+[m[32m            return parsed.tz_localize("UTC")[m
+[32m+[m[32m        return parsed.tz_convert("UTC")[m
+[32m+[m
+[32m+[m[32m    if clock_interpretation == "cest":[m
+[32m+[m[32m        # Preserve the displayed wall-clock time and deliberately ignore a[m
+[32m+[m[32m        # trailing Z because this option treats it as a known metadata issue.[m
+[32m+[m[32m        wall_clock = parsed.tz_localize(None)[m
+[32m+[m[32m        converted = wall_clock - pd.Timedelta(hours=2) + pd.Timedelta([m
+[32m+[m[32m            seconds=18[m
+[32m+[m[32m        )[m
+[32m+[m[32m        return converted.tz_localize("UTC")[m
+ [m
+[31m-    ubx_csv = synthetic_dir / "SYNTHETIC_DO_NOT_EVALUATE_mon_rf.csv"[m
+[31m-    rinex_csv = synthetic_dir / "SYNTHETIC_DO_NOT_EVALUATE_rinex.csv"[m
+[32m+[m[32m    raise ValueError(f"Unsupported clock interpretation: {clock_interpretation}")[m
+ [m
+[31m-    n = 2000[m
+[31m-    itow_base = 345600000  # ms into GPS week (mid-week)[m
+[31m-    itow = itow_base + np.arange(n) * 1000  # 1 Hz[m
+ [m
+[31m-    # Pre-attack: AGC nominal ~8000 count (quiet RF). Attack at t=1000: AGC drops to ~4200 (in-band attenuation)[m
+[31m-    agc = np.full(n, 8000, dtype=float) + np.random.normal(0, 15, size=n)[m
+[31m-    agc[1000:] = 4200 + np.random.normal(0, 30, size=1000)[m
+[31m-    agc = np.clip(agc, 0, 8191)[m
+[32m+[m[32mdef load_attack_intervals([m
+[32m+[m[32m    metadata_path: Path,[m
+[32m+[m[32m    clock_interpretation: str,[m
+[32m+[m[32m) -> list[tuple[pd.Timestamp, pd.Timestamp, str]]:[m
+[32m+[m[32m    """Read scenario.json attack_log entries as start/end intervals."""[m
+[32m+[m[32m    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))[m
+[32m+[m[32m    events = metadata.get("attack_log", [])[m
+ [m
+[31m-    df_rf = pd.DataFrame({[m
+[31m-        "iTOW": itow,[m
+[31m-        "agcCnt": agc.astype(int),[m
+[31m-        "jamInd": np.where(np.arange(n) >= 1000, 180, 5),[m
+[31m-    })[m
+[31m-    df_rf.to_csv(ubx_csv, index=False)[m
+[32m+[m[32m    parsed_events: list[tuple[pd.Timestamp, str]] = [][m
+ [m
+[31m-    # Carrier phase: slow drift + noise; during spoofing (t=1000), spoofer injects quadratic phase acceleration[m
+[31m-    phase = 10000.0 + 0.1 * np.arange(n) + np.random.normal(0, 0.05, size=n)[m
+[31m-    phase[1000:] += 0.005 * (np.arange(1000) ** 1.8)[m
+[32m+[m[32m    for event in events:[m
+[32m+[m[32m        timestamp = event.get("timestamp_utc")[m
+[32m+[m[32m        description = str(event.get("event", "")).strip()[m
+ [m
+[31m-    # C/N0: ~44 dB-Hz nominal, fluctuating[m
+[31m-    cno = np.full(n, 44.0) + np.random.normal(0, 0.4, size=n)[m
+[31m-    cno[1000:] += 3.5  # Spoofer higher power[m
+[32m+[m[32m        if not timestamp:[m
+[32m+[m[32m            continue[m
+ [m
+[31m-    df_rx = pd.DataFrame({[m
+[31m-        "iTOW": itow,[m
+[31m-        "L1C": phase,[m
+[31m-        "S1C": cno,[m
+[31m-        "LLI": np.where(np.arange(n) == 1000, 1, 0),  # Cycle slip flag at takeover[m
+[31m-    })[m
+[31m-    df_rx.to_csv(rinex_csv, index=False)[m
+[32m+[m[32m        parsed_events.append([m
+[32m+[m[32m            ([m
+[32m+[m[32m                convert_event_timestamp(timestamp, clock_interpretation),[m
+[32m+[m[32m                description,[m
+[32m+[m[32m            )[m
+[32m+[m[32m        )[m
+ [m
+[31m-    return ubx_csv, rinex_csv[m
+[32m+[m[32m    parsed_events.sort(key=lambda item: item[0])[m
+[32m+[m
+[32m+[m[32m    intervals: list[tuple[pd.Timestamp, pd.Timestamp, str]] = [][m
+[32m+[m[32m    open_start: pd.Timestamp | None = None[m
+[32m+[m[32m    open_description = ""[m
+[32m+[m
+[32m+[m[32m    for timestamp, description in parsed_events:[m
+[32m+[m[32m        description_lower = description.lower()[m
+[32m+[m
+[32m+[m[32m        if "start" in description_lower:[m
+[32m+[m[32m            if open_start is not None:[m
+[32m+[m[32m                logging.warning([m
+[32m+[m[32m                    "%s: new attack start before prior interval closed; "[m
+[32m+[m[32m                    "skipping unmatched start at %s",[m
+[32m+[m[32m                    metadata_path,[m
+[32m+[m[32m                    timestamp,[m
+[32m+[m[32m                )[m
+[32m+[m[32m            else:[m
+[32m+[m[32m                open_start = timestamp[m
+[32m+[m[32m                open_description = description[m
+[32m+[m
+[32m+[m[32m        elif any(word in description_lower for word in ("end", "stop", "finish")):[m
+[32m+[m[32m            if open_start is None:[m
+[32m+[m[32m                logging.warning([m
+[32m+[m[32m                    "%s: attack end without a preceding start at %s",[m
+[32m+[m[32m                    metadata_path,[m
+[32m+[m[32m                    timestamp,[m
+[32m+[m[32m                )[m
+[32m+[m[32m                continue[m
+[32m+[m
+[32m+[m[32m            if timestamp < open_start:[m
+[32m+[m[32m                logging.warning([m
+[32m+[m[32m                    "%s: end precedes start (%s < %s)",[m
+[32m+[m[32m                    metadata_path,[m
+[32m+[m[32m                    timestamp,[m
+[32m+[m[32m                    open_start,[m
+[32m+[m[32m                )[m
+[32m+[m[32m                open_start = None[m
+[32m+[m[32m                continue[m
+[32m+[m
+[32m+[m[32m            intervals.append((open_start, timestamp, open_description))[m
+[32m+[m[32m            open_start = None[m
+[32m+[m[32m            open_description = ""[m
+ [m
+[32m+[m[32m        else:[m
+[32m+[m[32m            logging.warning([m
+[32m+[m[32m                "%s: unrecognized attack event %r at %s",[m
+[32m+[m[32m                metadata_path,[m
+[32m+[m[32m                description,[m
+[32m+[m[32m                timestamp,[m
+[32m+[m[32m            )[m
+ [m
+[31m-def generate_sample_yunnan_data(raw_dir: Path) -> tuple[Path, Path]:[m
+[31m-    """Generate SYNTHETIC Yunnan-2024 schema-compliant sample tables.[m
+[32m+[m[32m    if open_start is not None:[m
+[32m+[m[32m        logging.warning([m
+[32m+[m[32m            "%s: unmatched attack start at %s; not labeling an open-ended "[m
+[32m+[m[32m            "interval",[m
+[32m+[m[32m            metadata_path,[m
+[32m+[m[32m            open_start,[m
+[32m+[m[32m        )[m
+ [m
+[31m-    WARNING: This output is NOT real data. Output is written to[m
+[31m-    data/synthetic/schema_samples/, never to data/processed/.[m
+[31m-    """[m
+[31m-    synthetic_dir = raw_dir.parent / "synthetic" / "schema_samples" / "yunnan"[m
+[31m-    synthetic_dir.mkdir(parents=True, exist_ok=True)[m
+[32m+[m[32m    return intervals[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef apply_attack_labels([m
+[32m+[m[32m    df: pd.DataFrame,[m
+[32m+[m[32m    intervals: list[tuple[pd.Timestamp, pd.Timestamp, str]],[m
+[32m+[m[32m) -> pd.DataFrame:[m
+[32m+[m[32m    """Label timestamps within logged attack intervals as 2; benign as 0."""[m
+[32m+[m[32m    out = df.copy()[m
+[32m+[m[32m    out[LABEL_COLUMN] = np.int8(0)[m
+[32m+[m
+[32m+[m[32m    for start, end, _description in intervals:[m
+[32m+[m[32m        mask = out["_time"].between(start, end, inclusive="both")[m
+[32m+[m[32m        out.loc[mask, LABEL_COLUMN] = np.int8(2)[m
+[32m+[m
+[32m+[m[32m    return out[m
+ [m
+[31m-    rawx_csv = synthetic_dir / "SYNTHETIC_DO_NOT_EVALUATE_rawx.csv"[m
+[31m-    navsat_csv = synthetic_dir / "SYNTHETIC_DO_NOT_EVALUATE_navsat.csv"[m
+ [m
+[31m-    n = 1800[m
+[31m-    tow = np.arange(n, dtype=float)[m
+[31m-    # RAWX: cpMes carrier phase[m
+[31m-    phase = 50000.0 + 0.15 * tow + np.random.normal(0, 0.04, size=n)[m
+[31m-    phase[900:] += 0.008 * (np.arange(900) ** 1.7)[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m[32m# Jammertest RF + RINEX ingestion[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+ [m
+[31m-    df_rawx = pd.DataFrame({[m
+[31m-        "rcvTow": tow,[m
+[31m-        "cpMes": phase,[m
+[31m-    })[m
+[31m-    df_rawx.to_csv(rawx_csv, index=False)[m
+[32m+[m[32mdef normalize_rf(path: Path) -> pd.DataFrame:[m
+[32m+[m[32m    """Normalize RF monitoring data into the project's common schema."""[m
+[32m+[m[32m    raw = read_csv_checked(path)[m
+[32m+[m[32m    df, _ = parse_timestamp_column(raw, path, preferred="real_time")[m
+ [m
+[31m-    # NAV-SAT: cno in dB-Hz[m
+[31m-    cno = np.full(n, 41.5) + np.random.normal(0, 0.5, size=n)[m
+[31m-    cno[900:] += 4.0[m
+[32m+[m[32m    agc_col = first_existing_column(df, AGC_CANDIDATES)[m
+[32m+[m[32m    corr_col = first_existing_column(df, CORR_CANDIDATES)[m
+[32m+[m[32m    jam_col = first_existing_column(df, JAM_CANDIDATES)[m
+ [m
+[31m-    df_navsat = pd.DataFrame({[m
+[31m-        "iTOW": (tow * 1000).astype(int),[m
+[31m-        "cno": cno,[m
+[31m-    })[m
+[31m-    df_navsat.to_csv(navsat_csv, index=False)[m
+[32m+[m[32m    out = pd.DataFrame({"_time": df["_time"]})[m
+[32m+[m
+[32m+[m[32m    out["hardware_agc"] = ([m
+[32m+[m[32m        pd.to_numeric(df[agc_col], errors="coerce")[m
+[32m+[m[32m        if agc_col else np.nan[m
+[32m+[m[32m    )[m
+[32m+[m[32m    out["corr_magnitude"] = ([m
+[32m+[m[32m        pd.to_numeric(df[corr_col], errors="coerce")[m
+[32m+[m[32m        if corr_col else np.nan[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    # Keep multiple jamming indicators instead of averaging unlike metrics.[m
+[32m+[m[32m    if jam_col:[m
+[32m+[m[32m        out["jam_indicator"] = pd.to_numeric([m
+[32m+[m[32m            df[jam_col], errors="coerce"[m
+[32m+[m[32m        )[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        out["jam_indicator"] = np.nan[m
+[32m+[m
+[32m+[m[32m    # Preserve additional RF AGC/noise/jamming channels where available.[m
+[32m+[m[32m    for col in df.columns:[m
+[32m+[m[32m        name = str(col)[m
+[32m+[m[32m        lowered = name.lower()[m
+[32m+[m
+[32m+[m[32m        if ([m
+[32m+[m[32m            name not in ("_time", "real_time")[m
+[32m+[m[32m            and any(token in lowered for token in ("agc", "noise", "jamind"))[m
+[32m+[m[32m            and name not in out.columns[m
+[32m+[m[32m        ):[m
+[32m+[m[32m            safe_name = re.sub(r"[^A-Za-z0-9_]+", "_", name).strip("_")[m
+[32m+[m[32m            if safe_name:[m
+[32m+[m[32m                out[f"rf_{safe_name}"] = pd.to_numeric([m
+[32m+[m[32m                    df[name], errors="coerce"[m
+[32m+[m[32m                )[m
+[32m+[m
+[32m+[m[32m    out = ([m
+[32m+[m[32m        out.groupby("_time", as_index=False)[m
+[32m+[m[32m        .median(numeric_only=True)[m
+[32m+[m[32m        .sort_values("_time")[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    if out["hardware_agc"].notna().sum() == 0:[m
+[32m+[m[32m        logging.warning([m
+[32m+[m[32m            "%s: no recognized AGC column. Available columns: %s",[m
+[32m+[m[32m            path,[m
+[32m+[m[32m            list(raw.columns),[m
+[32m+[m[32m        )[m
+ [m
+[31m-    return rawx_csv, navsat_csv[m
+[32m+[m[32m    return out[m
+ [m
+ [m
+[31m-def ingest_jammertest(raw_dir: Path, out_dir: Path, generate_samples: bool, log) -> list[Path]:[m
+[31m-    """Ingest Jammertest sessions into standardized processed CSVs.[m
+[32m+[m[32mdef normalize_rinex_csv(path: Path) -> pd.DataFrame:[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Normalize the project's pre-exported RINEX CSV.[m
+ [m
+[31m-    If no real data is found and generate_samples is False (the default),[m
+[31m-    exits with an error explaining how to download the real dataset.[m
+[31m-    If generate_samples is True, writes schema-verification files to[m
+[31m-    data/synthetic/schema_samples/ — NEVER to data/processed/.[m
+[32m+[m[32m    Note:[m
+[32m+[m[32m        This function does not certify that the export's observable mappings[m
+[32m+[m[32m        are correct. Known malformed SNR/phase rows must be handled by a[m
+[32m+[m[32m        validated signal-aware processing stage before scientific evaluation.[m
+     """[m
+[31m-    jt_dir = raw_dir / "jammertest"[m
+[31m-    ubx_files = list(jt_dir.glob("*.ubx")) + list(jt_dir.glob("*mon_rf*.csv"))[m
+[31m-    rinex_files = list(jt_dir.glob("*.rnx")) + list(jt_dir.glob("*rinex*.csv"))[m
+[31m-    # Exclude synthetic files that may have been placed under raw/ by mistake[m
+[31m-    ubx_files = [f for f in ubx_files if "SYNTHETIC" not in f.name][m
+[31m-    rinex_files = [f for f in rinex_files if "SYNTHETIC" not in f.name][m
+[31m-[m
+[31m-    if not ubx_files or not rinex_files:[m
+[31m-        if generate_samples:[m
+[31m-            log.warning([m
+[31m-                "[SYNTHETIC] No real Jammertest data found. Generating SCHEMA-ONLY sample "[m
+[31m-                "files for pipeline verification. These files are NOT real attack recordings "[m
+[31m-                "and MUST NOT be used for detector evaluation or patent evidence. "[m
+[31m-                "Download real data from: https://zenodo.org/records/15910563 "[m
+[31m-                "(DOI: 10.5281/zenodo.15910563)"[m
+[32m+[m[32m    raw = read_csv_checked(path)[m
+[32m+[m[32m    df, _ = parse_timestamp_column(raw, path, preferred="time")[m
+[32m+[m
+[32m+[m[32m    phase_col = first_existing_column(df, PHASE_CANDIDATES)[m
+[32m+[m[32m    cn0_col = first_existing_column(df, CN0_CANDIDATES)[m
+[32m+[m
+[32m+[m[32m    out = pd.DataFrame({"_time": df["_time"]})[m
+[32m+[m
+[32m+[m[32m    out["carrier_phase"] = ([m
+[32m+[m[32m        pd.to_numeric(df[phase_col], errors="coerce")[m
+[32m+[m[32m        if phase_col else np.nan[m
+[32m+[m[32m    )[m
+[32m+[m[32m    out["cn0_db_hz"] = ([m
+[32m+[m[32m        pd.to_numeric(df[cn0_col], errors="coerce")[m
+[32m+[m[32m        if cn0_col else np.nan[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    # Keep satellite identifiers where present for diagnostics.[m
+[32m+[m[32m    sat_col = first_existing_column([m
+[32m+[m[32m        df, ("satellite", "sv", "sv_id", "sat")[m
+[32m+[m[32m    )[m
+[32m+[m[32m    if sat_col:[m
+[32m+[m[32m        out["satellite"] = df[sat_col].astype(str)[m
+[32m+[m
+[32m+[m[32m    # A row-level median is not a valid way to combine different satellites.[m
+[32m+[m[32m    # Aggregate only within timestamp and satellite if satellite IDs exist.[m
+[32m+[m[32m    if "satellite" in out.columns:[m
+[32m+[m[32m        out = ([m
+[32m+[m[32m            out.groupby(["_time", "satellite"], as_index=False)[m
+[32m+[m[32m            .agg([m
+[32m+[m[32m                carrier_phase=("carrier_phase", "median"),[m
+[32m+[m[32m                cn0_db_hz=("cn0_db_hz", "median"),[m
+             )[m
+[31m-            u_csv, r_csv = generate_sample_jammertest_data(raw_dir)[m
+[31m-            log.warning("[SYNTHETIC] Schema sample written to: %s", u_csv.parent)[m
+[31m-            # Return empty — do NOT write synthetic data to processed/[m
+[31m-            return [][m
+[31m-        else:[m
+[31m-            log.error([m
+[31m-                "No Jammertest-2024 raw files found in %s. "[m
+[31m-                "Download the dataset from https://zenodo.org/records/15910563 "[m
+[31m-                "(DOI: 10.5281/zenodo.15910563) and place UBX/RINEX files there. "[m
+[31m-                "Use --generate-schema-samples to generate schema-verification files only "[m
+[31m-                "(these are NOT real data and must not be used for evaluation).",[m
+[31m-                jt_dir,[m
+[32m+[m[32m        )[m
+[32m+[m
+[32m+[m[32m        # Reduce to one row per epoch only after retaining per-satellite[m
+[32m+[m[32m        # diagnostics. The epoch-level phase is a descriptive aggregate, not[m
+[32m+[m[32m        # a substitute for phase continuity on a stable reference satellite.[m
+[32m+[m[32m        epoch = ([m
+[32m+[m[32m            out.groupby("_time", as_index=False)[m
+[32m+[m[32m            .agg([m
+[32m+[m[32m                carrier_phase=("carrier_phase", "median"),[m
+[32m+[m[32m                cn0_db_hz=("cn0_db_hz", "median"),[m
+             )[m
+[31m-            return [][m
+[31m-[m
+[31m-    processed_paths = [][m
+[31m-    u_file = ubx_files[0][m
+[31m-    r_file = rinex_files[0][m
+[31m-    log.info("Parsing Jammertest session: UBX=%s, RINEX=%s", u_file.name, r_file.name)[m
+[31m-[m
+[31m-    if u_file.suffix == ".csv":[m
+[31m-        # Pre-exported CSV mode[m
+[31m-        df_u = pd.read_csv(u_file)[m
+[31m-        df_r = pd.read_csv(r_file)[m
+[31m-        time_s = (df_u["iTOW"] / 1000.0) % 604800.0[m
+[31m-        df = pd.DataFrame({[m
+[31m-            "time_s": time_s.values,[m
+[31m-            "carrier_phase": df_r["L1C"].values if "L1C" in df_r.columns else np.nan,[m
+[31m-            "hardware_agc": df_u["agcCnt"].values.astype(float) if "agcCnt" in df_u.columns else np.nan,[m
+[31m-            "corr_magnitude": np.nan,[m
+[31m-            "cn0_db_hz": df_r["S1C"].values.astype(float) if "S1C" in df_r.columns else np.nan,[m
+[31m-            "attack_label": np.where(time_s - time_s.iloc[0] >= 1000.0, 2, 0),  # 2=spoofing[m
+[31m-            "cycle_slip_flag": df_r["LLI"].values if "LLI" in df_r.columns else 0,[m
+[31m-        })[m
+[32m+[m[32m        )[m
+[32m+[m[32m        out = epoch[m
+     else:[m
+[31m-        df = parse_jammertest_session(ubx_path=u_file, rinex_obs_path=r_file, attack_label=2)[m
+[31m-[m
+[31m-    out_path = out_dir / "jammertest_session_spoofing.csv"[m
+[31m-    df.to_csv(out_path, index=False)[m
+[31m-    log.info("Saved processed Jammertest data: %s (%d rows)", out_path, len(df))[m
+[31m-    processed_paths.append(out_path)[m
+[31m-[m
+[31m-    return processed_paths[m
+[31m-[m
+[31m-[m
+[31m-def ingest_yunnan(raw_dir: Path, out_dir: Path, generate_samples: bool, log) -> list[Path]:[m
+[31m-    """Ingest Yunnan-2024 UBX table sessions."""[m
+[31m-    yn_dir = raw_dir / "yunnan"[m
+[31m-    rawx_files = list(yn_dir.glob("*rawx*.csv"))[m
+[31m-    navsat_files = list(yn_dir.glob("*navsat*.csv"))[m
+[31m-[m
+[31m-    if (not rawx_files or not navsat_files) and generate_samples:[m
+[31m-        log.info("Generating representative Yunnan raw sample tables...")[m
+[31m-        rx_csv, ns_csv = generate_sample_yunnan_data(raw_dir)[m
+[31m-        rawx_files = [rx_csv][m
+[31m-        navsat_files = [ns_csv][m
+[31m-[m
+[31m-    processed_paths = [][m
+[31m-    if rawx_files and navsat_files:[m
+[31m-        df = parse_yunnan_session([m
+[31m-            rawx_csv_path=rawx_files[0],[m
+[31m-            navsat_csv_path=navsat_files[0],[m
+[31m-            attack_label=2,[m
+[32m+[m[32m        out = ([m
+[32m+[m[32m            out.groupby("_time", as_index=False)[m
+[32m+[m[32m            .median(numeric_only=True)[m
+         )[m
+[31m-        # Apply attack onset timing (clean baseline first 900s)[m
+[31m-        t_start = df["time_s"].iloc[0][m
+[31m-        df["attack_label"] = np.where(df["time_s"] - t_start >= 900.0, 2, 0)[m
+ [m
+[31m-        out_path = out_dir / "yunnan_session_spoofing.csv"[m
+[31m-        df.to_csv(out_path, index=False)[m
+[31m-        log.info("Saved processed Yunnan data: %s (%d rows)", out_path, len(df))[m
+[31m-        processed_paths.append(out_path)[m
+[32m+[m[32m    out = out.sort_values("_time")[m
+[32m+[m
+[32m+[m[32m    if phase_col is None:[m
+[32m+[m[32m        logging.warning("%s: no recognized carrier-phase column", path)[m
+[32m+[m[32m    if cn0_col is None:[m
+[32m+[m[32m        logging.warning("%s: no recognized C/N0 column", path)[m
+[32m+[m
+[32m+[m[32m    return out[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef align_rf_and_rinex([m
+[32m+[m[32m    rf: pd.DataFrame,[m
+[32m+[m[32m    rinex: pd.DataFrame,[m
+[32m+[m[32m    tolerance_seconds: float,[m
+[32m+[m[32m) -> pd.DataFrame:[m
+[32m+[m[32m    """Align independently sampled RF and RINEX streams by nearest time."""[m
+[32m+[m[32m    if rf.empty or rinex.empty:[m
+[32m+[m[32m        raise ValueError("Cannot align empty RF or RINEX data")[m
+[32m+[m
+[32m+[m[32m    left = rf.sort_values("_time").copy()[m
+[32m+[m[32m    right = rinex.sort_values("_time").copy()[m
+[32m+[m
+[32m+[m[32m    aligned = pd.merge_asof([m
+[32m+[m[32m        left,[m
+[32m+[m[32m        right,[m
+[32m+[m[32m        on="_time",[m
+[32m+[m[32m        direction="nearest",[m
+[32m+[m[32m        tolerance=pd.Timedelta(seconds=tolerance_seconds),[m
+[32m+[m[32m        suffixes=("_rf", "_rinex"),[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    matched = aligned["carrier_phase"].notna().sum() if "carrier_phase" in aligned else 0[m
+[32m+[m[32m    logging.info([m
+[32m+[m[32m        "Timestamp alignment: %d/%d RF rows have a matched phase value "[m
+[32m+[m[32m        "(tolerance %.3f s)",[m
+[32m+[m[32m        int(matched),[m
+[32m+[m[32m        len(aligned),[m
+[32m+[m[32m        tolerance_seconds,[m
+[32m+[m[32m    )[m
+[32m+[m
+[32m+[m[32m    # Relative time in seconds from the first RF timestamp.[m
+[32m+[m[32m    aligned["time_s"] = ([m
+[32m+[m[32m        aligned["_time"] - aligned["_time"].iloc[0][m
+[32m+[m[32m    ).dt.total_seconds()[m
+[32m+[m
+[32m+[m[32m    aligned["time"] = aligned["_time"].astype(str)[m
+[32m+[m[32m    return aligned[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef discover_jammertest_sessions([m
+[32m+[m[32m    raw_dir: Path,[m
+[32m+[m[32m) -> list[tuple[Path, Path, Path]]:[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Return (scenario directory, RF CSV, RINEX CSV) tuples.[m
+[32m+[m
+[32m+[m[32m    A session is accepted only when both files and scenario.json are in the[m
+[32m+[m[32m    same directory. This prevents pairing unrelated recordings by list order.[m
+[32m+[m[32m    """[m
+[32m+[m[32m    root = raw_dir / "jammertest"[m
+[32m+[m[32m    if not root.exists():[m
+[32m+[m[32m        return [][m
+[32m+[m
+[32m+[m[32m    sessions: list[tuple[Path, Path, Path]] = [][m
+[32m+[m
+[32m+[m[32m    for metadata_path in sorted(root.rglob("scenario.json")):[m
+[32m+[m[32m        folder = metadata_path.parent[m
+[32m+[m[32m        rf_path = folder / "mon_rf.csv"[m
+[32m+[m[32m        rinex_path = folder / "rinex.csv"[m
+[32m+[m
+[32m+[m[32m        if rf_path.exists() and rinex_path.exists():[m
+[32m+[m[32m            sessions.append((folder, rf_path, rinex_path))[m
+[32m+[m
+[32m+[m[32m    return sessions[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef safe_output_name(metadata_path: Path, folder: Path) -> str:[m
+[32m+[m[32m    """Generate a readable filename without overwriting unrelated outputs."""[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        metadata = json.loads(metadata_path.read_text(encoding="utf-8"))[m
+[32m+[m[32m    except Exception:[m
+[32m+[m[32m        metadata = {}[m
+[32m+[m
+[32m+[m[32m    scenario = str(metadata.get("scenario_id", folder.name))[m
+[32m+[m[32m    scenario = re.sub(r"[^A-Za-z0-9._-]+", "_", scenario).strip("_")[m
+[32m+[m[32m    return f"jammertest_real_{scenario}.csv"[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef ingest_jammertest([m
+[32m+[m[32m    raw_dir: Path,[m
+[32m+[m[32m    out_dir: Path,[m
+[32m+[m[32m    clock_interpretation: str,[m
+[32m+[m[32m    tolerance_seconds: float,[m
+[32m+[m[32m) -> list[Path]:[m
+[32m+[m[32m    """Ingest all valid nested Jammertest sessions."""[m
+[32m+[m[32m    sessions = discover_jammertest_sessions(raw_dir)[m
+[32m+[m
+[32m+[m[32m    if not sessions:[m
+[32m+[m[32m        logging.warning([m
+[32m+[m[32m            "No nested Jammertest sessions found under %s. Expected each "[m
+[32m+[m[32m            "session directory to contain scenario.json, mon_rf.csv, and "[m
+[32m+[m[32m            "rinex.csv.",[m
+[32m+[m[32m            raw_dir / "jammertest",[m
+[32m+[m[32m        )[m
+[32m+[m[32m        return [][m
+[32m+[m
+[32m+[m[32m    output_dir = out_dir / "jammertest"[m
+[32m+[m[32m    output_dir.mkdir(parents=True, exist_ok=True)[m
+[32m+[m
+[32m+[m[32m    outputs: list[Path] = [][m
+ [m
+[31m-    return processed_paths[m
+[32m+[m[32m    for folder, rf_path, rinex_path in sessions:[m
+[32m+[m[32m        metadata_path = folder / "scenario.json"[m
+[32m+[m[32m        logging.info("Ingesting Jammertest scenario: %s", folder)[m
+[32m+[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            rf = normalize_rf(rf_path)[m
+[32m+[m[32m            rinex = normalize_rinex_csv(rinex_path)[m
+[32m+[m[32m            aligned = align_rf_and_rinex([m
+[32m+[m[32m                rf,[m
+[32m+[m[32m                rinex,[m
+[32m+[m[32m                tolerance_seconds=tolerance_seconds,[m
+[32m+[m[32m            )[m
+[32m+[m
+[32m+[m[32m            intervals = load_attack_intervals([m
+[32m+[m[32m                metadata_path,[m
+[32m+[m[32m                clock_interpretation=clock_interpretation,[m
+[32m+[m[32m            )[m
+[32m+[m[32m            aligned = apply_attack_labels(aligned, intervals)[m
+[32m+[m
+[32m+[m[32m            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))[m
+[32m+[m[32m            aligned["scenario_id"] = str([m
+[32m+[m[32m                metadata.get("scenario_id", folder.name)[m
+[32m+[m[32m            )[m
+[32m+[m[32m            aligned["attack_type"] = str([m
+[32m+[m[32m                metadata.get("attack_type", "unknown")[m
+[32m+[m[32m            )[m
+[32m+[m[32m            aligned["label_source"] = "scenario.json attack_log"[m
+[32m+[m[32m            aligned["timestamp_interpretation"] = clock_interpretation[m
+[32m+[m
+[32m+[m[32m            # Keep internal helper column out of the public output.[m
+[32m+[m[32m            aligned = aligned.drop(columns=["_time"], errors="ignore")[m
+[32m+[m
+[32m+[m[32m            out_path = output_dir / safe_output_name(metadata_path, folder)[m
+[32m+[m
+[32m+[m[32m            # Do not silently overwrite a previous run's result.[m
+[32m+[m[32m            if out_path.exists():[m
+[32m+[m[32m                out_path = out_path.with_name([m
+[32m+[m[32m                    f"{out_path.stem}_rerun{out_path.suffix}"[m
+[32m+[m[32m                )[m
+[32m+[m
+[32m+[m[32m            aligned.to_csv(out_path, index=False)[m
+[32m+[m[32m            outputs.append(out_path)[m
+[32m+[m
+[32m+[m[32m            attack_rows = int((aligned[LABEL_COLUMN] != 0).sum())[m
+[32m+[m[32m            logging.info([m
+[32m+[m[32m                "Saved %s: %d rows; %d labeled attack rows; %d logged "[m
+[32m+[m[32m                "intervals; clock=%s",[m
+[32m+[m[32m                out_path,[m
+[32m+[m[32m                len(aligned),[m
+[32m+[m[32m                attack_rows,[m
+[32m+[m[32m                len(intervals),[m
+[32m+[m[32m                clock_interpretation,[m
+[32m+[m[32m            )[m
+[32m+[m
+[32m+[m[32m            if attack_rows == 0 and intervals:[m
+[32m+[m[32m                logging.warning([m
+[32m+[m[32m                    "%s: logged attack intervals produced zero labeled rows. "[m
+[32m+[m[32m                    "Check the timestamp convention and recording coverage.",[m
+[32m+[m[32m                    folder,[m
+[32m+[m[32m                )[m
+[32m+[m
+[32m+[m[32m        except Exception:[m
+[32m+[m[32m            logging.exception("Failed to ingest Jammertest session %s", folder)[m
+[32m+[m
+[32m+[m[32m    return outputs[m
+ [m
+ [m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m[32m# CLI[m
+[32m+[m[32m# ---------------------------------------------------------------------------[m
+[32m+[m
+ @click.command()[m
+[31m-@click.option("--config", default="config.yaml", show_default=True, help="Path to config.yaml")[m
+[32m+[m[32m@click.option([m
+[32m+[m[32m    "--config",[m
+[32m+[m[32m    default="config.yaml",[m
+[32m+[m[32m    show_default=True,[m
+[32m+[m[32m    type=click.Path(path_type=Path, exists=True, dir_okay=False),[m
+[32m+[m[32m)[m
+ @click.option([m
+     "--dataset",[m
+[31m-    default="all",[m
+[31m-    type=click.Choice(["all", "jammertest", "yunnan", "fgi"]),[m
+[32m+[m[32m    default="jammertest",[m
+     show_default=True,[m
+[31m-    help="Target dataset to ingest",[m
+[32m+[m[32m    type=click.Choice(["all", "jammertest"]),[m
+[32m+[m[32m    help="Dataset to ingest. Only Jammertest is implemented in this version.",[m
+ )[m
+ @click.option([m
+[31m-    "--generate-schema-samples",[m
+[31m-    "generate_samples",  # internal name kept for backward compat[m
+[31m-    is_flag=True,[m
+[31m-    default=False,[m
+[32m+[m[32m    "--jammertest-clock",[m
+[32m+[m[32m    type=click.Choice(["literal", "cest"]),[m
+[32m+[m[32m    default="literal",[m
+[32m+[m[32m    show_default=True,[m
+     help=([m
+[31m-        "[SCHEMA VERIFICATION ONLY] Generate synthetic files that mimic the column "[m
+[31m-        "structure of real datasets. Output is written to data/synthetic/schema_samples/ "[m
+[31m-        "and is NEVER used as evaluation data. Real data must be downloaded separately "[m
+[31m-        "(Jammertest-2024: https://zenodo.org/records/15910563)."[m
+[32m+[m[32m        "'literal' respects timestamps as written; 'cest' treats the "[m
+[32m+[m[32m        "displayed event time as CEST and converts to the recording clock."[m
+     ),[m
+ )[m
+[31m-def main(config: str, dataset: str, generate_samples: bool) -> None:[m
+[31m-    """Ingest and align raw GNSS datasets into data/processed/."""[m
+[31m-    cfg = load_config(config)[m
+[31m-    log = setup_logging(level=cfg["logging"]["level"], log_file=cfg["logging"]["file"])[m
+[31m-    log.info("=== CKEC-GNSS Raw Data Ingestion Pipeline ===")[m
+[32m+[m[32m@click.option([m
+[32m+[m[32m    "--tolerance-seconds",[m
+[32m+[m[32m    type=click.FloatRange(min=0.01, max=60.0),[m
+[32m+[m[32m    default=1.0,[m
+[32m+[m[32m    show_default=True,[m
+[32m+[m[32m    help="Maximum RF-to-RINEX timestamp difference for alignment.",[m
+[32m+[m[32m)[m
+[32m+[m[32mdef main([m
+[32m+[m[32m    config: Path,[m
+[32m+[m[32m    dataset: str,[m
+[32m+[m[32m    jammertest_clock: str,[m
+[32m+[m[32m    tolerance_seconds: float,[m
+[32m+[m[32m) -> None:[m
+[32m+[m[32m    """Ingest raw GNSS recordings without silently pairing or labeling data."""[m
+[32m+[m[32m    cfg = load_config(str(config))[m
+[32m+[m[32m    log_cfg = cfg.get("logging", {})[m
+[32m+[m[32m    setup_logging([m
+[32m+[m[32m        level=log_cfg.get("level", "INFO"),[m
+[32m+[m[32m        log_file=log_cfg.get("file"),[m
+[32m+[m[32m    )[m
+ [m
+     raw_dir = Path(cfg["paths"]["data_raw"])[m
+[31m-    out_dir = Path(cfg["paths"]["data_processed"])[m
+[31m-    raw_dir.mkdir(parents=True, exist_ok=True)[m
+[31m-    out_dir.mkdir(parents=True, exist_ok=True)[m
+[31m-[m
+[31m-    all_processed: list[Path] = [][m
+[31m-[m
+[31m-    if dataset in ("all", "jammertest"):[m
+[31m-        p = ingest_jammertest(raw_dir, out_dir, generate_samples, log)[m
+[31m-        all_processed.extend(p)[m
+[31m-[m
+[31m-    if dataset in ("all", "yunnan"):[m
+[31m-        p = ingest_yunnan(raw_dir, out_dir, generate_samples, log)[m
+[31m-        all_processed.extend(p)[m
+[31m-[m
+[31m-    log.info("Ingestion complete. Total processed sessions created: %d", len(all_processed))[m
+[31m-    for p in all_processed:[m
+[31m-        df = pd.read_csv(p)[m
+[31m-        print(f"\n--- Ingested Dataset Summary: {p.name} ---")[m
+[31m-        print(f"  Rows: {len(df)}")[m
+[31m-        print(f"  Duration: {df['time_s'].iloc[-1] - df['time_s'].iloc[0]:.1f} s")[m
+[31m-        print(f"  Hardware AGC non-null: {df['hardware_agc'].notna().sum()} / {len(df)}")[m
+[31m-        print(f"  Carrier Phase non-null: {df['carrier_phase'].notna().sum()} / {len(df)}")[m
+[31m-        print(f"  C/N0 non-null: {df['cn0_db_hz'].notna().sum()} / {len(df)}")[m
+[31m-        print(f"  Attack Samples: {(df['attack_label'] != 0).sum()} (Onset at t={df.loc[df['attack_label'] != 0, 'time_s'].iloc[0] if (df['attack_label'] != 0).any() else 'N/A'})")[m
+[32m+[m[32m    processed_dir = Path(cfg["paths"]["data_processed"])[m
+[32m+[m
+[32m+[m[32m    logging.info("=== CKEC-GNSS Real Data Ingestion ===")[m
+[32m+[m[32m    logging.info("Raw directory: %s", raw_dir)[m
+[32m+[m[32m    logging.info("Processed directory: %s", processed_dir)[m
+[32m+[m[32m    logging.info("Jammertest clock interpretation: %s", jammertest_clock)[m
+[32m+[m
+[32m+[m[32m    if dataset in ("jammertest", "all"):[m
+[32m+[m[32m        outputs = ingest_jammertest([m
+[32m+[m[32m            raw_dir=raw_dir,[m
+[32m+[m[32m            out_dir=processed_dir,[m
+[32m+[m[32m            clock_interpretation=jammertest_clock,[m
+[32m+[m[32m            tolerance_seconds=tolerance_seconds,[m
+[32m+[m[32m        )[m
+[32m+[m[32m    else:[m
+[32m+[m[32m        outputs = [][m
+[32m+[m
+[32m+[m[32m    logging.info("Ingestion finished: %d output files", len(outputs))[m
+[32m+[m
+[32m+[m[32m    for path in outputs:[m
+[32m+[m[32m        df = pd.read_csv(path)[m
+[32m+[m[32m        attack_count = int((df[LABEL_COLUMN] != 0).sum())[m
+[32m+[m
+[32m+[m[32m        print(f"\n--- {path.name} ---")[m
+[32m+[m[32m        print(f"Rows: {len(df)}")[m
+[32m+[m[32m        print(f"Duration: {df['time_s'].max() - df['time_s'].min():.2f} s")[m
+[32m+[m[32m        print(f"AGC non-null: {df['hardware_agc'].notna().sum()}")[m
+[32m+[m[32m        print(f"Carrier phase non-null: {df['carrier_phase'].notna().sum()}")[m
+[32m+[m[32m        print(f"C/N0 non-null: {df['cn0_db_hz'].notna().sum()}")[m
+[32m+[m[32m        print(f"Attack-labeled rows: {attack_count}")[m
+[32m+[m[32m        print([m
+[32m+[m[32m            "Warning: these labels reproduce scenario.json intervals; "[m
+[32m+[m[32m            "they are not independent verification of on-air activity."[m
+[32m+[m[32m        )[m
+ [m
+ [m
+ if __name__ == "__main__":[m

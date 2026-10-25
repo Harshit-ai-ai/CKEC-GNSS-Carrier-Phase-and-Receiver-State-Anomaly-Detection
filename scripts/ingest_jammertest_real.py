@@ -18,6 +18,7 @@ import json
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from phase_quality import flag_phase_discontinuities
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -162,21 +163,98 @@ def parse_mon_rf(path: Path) -> pd.DataFrame:
 # RINEX Parsing (multi-satellite -> per-epoch aggregation)
 # ---------------------------------------------------------------------------
 
-def parse_rinex_to_epoch(path: Path, max_rows: int | None = None) -> pd.DataFrame:
-    """Parse rinex.csv and aggregate to per-epoch statistics."""
+
+def parse_rinex_to_epoch(
+    path: Path,
+    max_rows: int | None = None,
+) -> pd.DataFrame:
+    """Screen raw RINEX observations and aggregate them by epoch."""
     kwargs = {"nrows": max_rows} if max_rows else {}
     df = pd.read_csv(path, **kwargs)
 
-    df["timestamp"] = pd.to_datetime(df["time"])
-    epoch_groups = df.groupby("timestamp")
+    required = {"time", "satellite"}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"{path}: missing required columns: {sorted(missing)}")
+
+    df["timestamp"] = pd.to_datetime(df["time"], errors="coerce")
+    df = df.loc[df["timestamp"].notna()].copy()
+
+    # Screen numeric observations independently for each frequency band.
+    for band in ("L1", "L2"):
+        phase_col = f"carrier_phase_{band}"
+        snr_col = f"snr_{band}"
+        pr_col = f"pseudorange_{band}"
+
+        for col in (phase_col, snr_col, pr_col, f"doppler_{band}"):
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        if snr_col in df.columns:
+            invalid = df[snr_col].notna() & ~df[snr_col].between(0, 100)
+            if invalid.any():
+                print(
+                    f"[QUALITY] {path.name} {snr_col}: "
+                    f"rejected {int(invalid.sum())} values outside [0, 100]"
+                )
+                df.loc[invalid, snr_col] = np.nan
+
+        if pr_col in df.columns:
+            invalid = df[pr_col].notna() & ~df[pr_col].between(1e6, 1e8)
+            if invalid.any():
+                print(
+                    f"[QUALITY] {path.name} {pr_col}: "
+                    f"rejected {int(invalid.sum())} values outside "
+                    "[1e6, 1e8] metres"
+                )
+                df.loc[invalid, pr_col] = np.nan
+
+        if phase_col in df.columns:
+            phase = df[phase_col]
+            invalid = phase.notna() & (
+                ~np.isfinite(phase) | (phase.abs() > 1e9)
+            )
+            if invalid.any():
+                print(
+                    f"[QUALITY] {path.name} {phase_col}: "
+                    f"rejected {int(invalid.sum())} invalid/extreme values"
+                )
+                df.loc[invalid, phase_col] = np.nan
+
+            # The quality helper expects canonical column names.
+            phase_input = pd.DataFrame({
+                "time": df["timestamp"],
+                "satellite": df["satellite"],
+                "carrier_phase": df[phase_col],
+            })
+
+            flagged = flag_phase_discontinuities(
+                phase_input,
+                max_gap_seconds=2.0,
+                max_phase_rate_cycles_per_second=100_000.0,
+            )
+
+            count = int(flagged.sum())
+            if count:
+                print(
+                    f"[QUALITY] {path.name} {phase_col}: "
+                    f"flagged {count} phase discontinuities"
+                )
+                df.loc[flagged.to_numpy(), phase_col] = np.nan
 
     records = []
-    for ts, group in epoch_groups:
-        l1_mask = group["carrier_phase_L1"].notna()
-        l2_mask = group["carrier_phase_L2"].notna()
 
-        l1_data = group[l1_mask]
-        l2_data = group[l2_mask]
+    for ts, group in df.groupby("timestamp", sort=True):
+        l1_data = (
+            group[group["carrier_phase_L1"].notna()]
+            if "carrier_phase_L1" in group.columns
+            else group.iloc[0:0]
+        )
+        l2_data = (
+            group[group["carrier_phase_L2"].notna()]
+            if "carrier_phase_L2" in group.columns
+            else group.iloc[0:0]
+        )
 
         rec = {
             "timestamp": ts,
@@ -184,37 +262,47 @@ def parse_rinex_to_epoch(path: Path, max_rows: int | None = None) -> pd.DataFram
             "n_sats_L2": len(l2_data),
         }
 
-        if len(l1_data) > 0:
-            if l1_data["snr_L1"].notna().any():
+        if not l1_data.empty:
+            if (
+                "snr_L1" in l1_data.columns
+                and l1_data["snr_L1"].notna().any()
+            ):
                 ref_idx = l1_data["snr_L1"].idxmax()
-                rec["carrier_phase_L1_ref"] = l1_data.loc[ref_idx, "carrier_phase_L1"]
-                rec["ref_satellite"] = l1_data.loc[ref_idx, "satellite"]
             else:
-                valid_phase = l1_data["carrier_phase_L1"].dropna()
-                rec["carrier_phase_L1_ref"] = valid_phase.iloc[0] if len(valid_phase) > 0 else np.nan
-                rec["ref_satellite"] = l1_data["satellite"].iloc[0] if "satellite" in l1_data.columns else None
+                ref_idx = l1_data.index[0]
 
-            rec["cn0_L1_mean"] = l1_data["snr_L1"].mean()
-            rec["cn0_L1_std"] = l1_data["snr_L1"].std() if l1_data["snr_L1"].notna().sum() > 1 else 0.0
-            rec["doppler_L1_mean"] = l1_data["doppler_L1"].mean() if "doppler_L1" in l1_data.columns else np.nan
-            rec["doppler_L1_std"] = l1_data["doppler_L1"].std() if ("doppler_L1" in l1_data.columns and l1_data["doppler_L1"].notna().sum() > 1) else 0.0
+            rec["carrier_phase_L1_ref"] = l1_data.loc[
+                ref_idx, "carrier_phase_L1"
+            ]
+            rec["ref_satellite"] = l1_data.loc[ref_idx, "satellite"]
+
+            snr = l1_data["snr_L1"] if "snr_L1" in l1_data.columns else pd.Series(dtype=float)
+            doppler = l1_data["doppler_L1"] if "doppler_L1" in l1_data.columns else pd.Series(dtype=float)
+
+            rec["cn0_L1_mean"] = snr.mean()
+            rec["cn0_L1_std"] = snr.std() if snr.notna().sum() > 1 else 0.0
+            rec["doppler_L1_mean"] = doppler.mean()
+            rec["doppler_L1_std"] = doppler.std() if doppler.notna().sum() > 1 else 0.0
         else:
-            rec["carrier_phase_L1_ref"] = np.nan
-            rec["ref_satellite"] = None
-            rec["cn0_L1_mean"] = np.nan
-            rec["cn0_L1_std"] = np.nan
-            rec["doppler_L1_mean"] = np.nan
-            rec["doppler_L1_std"] = np.nan
+            rec.update({
+                "carrier_phase_L1_ref": np.nan,
+                "ref_satellite": None,
+                "cn0_L1_mean": np.nan,
+                "cn0_L1_std": np.nan,
+                "doppler_L1_mean": np.nan,
+                "doppler_L1_std": np.nan,
+            })
 
-        if len(l2_data) > 0 and l2_data["snr_L2"].notna().any():
+        if not l2_data.empty and "snr_L2" in l2_data.columns:
             rec["cn0_L2_mean"] = l2_data["snr_L2"].mean()
         else:
             rec["cn0_L2_mean"] = np.nan
 
         records.append(rec)
 
-    return pd.DataFrame(records).sort_values("timestamp").reset_index(drop=True)
-
+    return pd.DataFrame(records).sort_values(
+        "timestamp"
+    ).reset_index(drop=True)
 
 # ---------------------------------------------------------------------------
 # Alignment + Labelling
@@ -251,10 +339,10 @@ def align_and_label(
     rinex_epochs = rinex_epochs.sort_values("timestamp").reset_index(drop=True)
 
     merged = pd.merge_asof(
-        mon_rf,
-        rinex_epochs,
+        mon_rf.sort_values("timestamp"),
+        rinex_epochs.sort_values("timestamp"),
         on="timestamp",
-        tolerance=pd.Timedelta("2s"),
+        tolerance=pd.Timedelta("250ms"),
         direction="nearest",
     )
 
@@ -266,6 +354,7 @@ def align_and_label(
         "time_s": merged["time_s"],
         "timestamp": merged["timestamp"],
         "carrier_phase": merged.get("carrier_phase_L1_ref", np.nan),
+        "ref_satellite": merged.get("ref_satellite", np.nan),
         "hardware_agc": merged["agcCnt_L1"],
         "hardware_agc_L2L5": merged["agcCnt_L2L5"],
         "cn0_db_hz": merged.get("cn0_L1_mean", np.nan),

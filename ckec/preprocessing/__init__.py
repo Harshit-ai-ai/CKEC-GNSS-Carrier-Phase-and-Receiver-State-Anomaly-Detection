@@ -26,20 +26,39 @@ log = logging.getLogger(__name__)
 # Phase handling
 # ---------------------------------------------------------------------------
 
-def unwrap_phase(series: pd.Series, discont: float = np.pi) -> pd.Series:
+def unwrap_phase(
+    series: pd.Series,
+    unit: str = "radians",
+    discont: float | None = None,
+) -> pd.Series:
     """
-    Unwrap a carrier-phase series using numpy.unwrap.
+    Unwrap wrapped phase observations.
 
-    Parameters
-    ----------
-    series   : phase observations in radians
-    discont  : discontinuity threshold (default π rad)
+    unit:
+        "radians" -- phase period is 2*pi
+        "cycles"  -- phase period is 1
 
-    Returns
-    -------
-    unwrapped phase series with the same index
+    Do not call this on already-unwrapped carrier phase.
     """
-    unwrapped = np.unwrap(series.to_numpy(), discont=discont)
+    if unit not in {"radians", "cycles"}:
+        raise ValueError("unit must be 'radians' or 'cycles'")
+
+    values = series.to_numpy(dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError(
+            "unwrap_phase received NaN or infinite values; "
+            "split into contiguous finite segments before unwrapping."
+        )
+
+    scale = 2.0 * np.pi if unit == "cycles" else 1.0
+    radians = values * scale
+
+    if discont is None:
+        discontinuity = np.pi
+    else:
+        discontinuity = discont * scale
+
+    unwrapped = np.unwrap(radians, discont=discontinuity) / scale
     return pd.Series(unwrapped, index=series.index, name=series.name)
 
 
@@ -112,46 +131,42 @@ def align_channels(
     time_col: str = "time_s",
     tolerance_s: float = 0.01,
 ) -> pd.DataFrame:
-    """
-    Check that successive samples are within `tolerance_s` of a uniform grid.
-    Logs a warning (and inserts NaN rows) if gaps exceed the tolerance.
-
-    This is intentionally conservative: it does not silently resample data
-    from physically different sampling instants.
-
-    Parameters
-    ----------
-    df           : DataFrame with a numeric time column
-    time_col     : name of the time column in seconds
-    tolerance_s  : maximum allowed deviation from uniform spacing
-
-    Returns
-    -------
-    df (possibly with NaN-filled gap rows inserted)
-    """
+    """Validate timestamp order and report gaps without synthesizing samples."""
     if time_col not in df.columns:
-        log.warning("Time column '%s' not found; skipping alignment check.", time_col)
-        return df
+        raise ValueError(f"Missing required time column: {time_col}")
+    if tolerance_s < 0:
+        raise ValueError("tolerance_s must be non-negative")
 
-    dt = df[time_col].diff().dropna()
-    median_dt = dt.median()
-    irregular = dt[(dt - median_dt).abs() > tolerance_s]
-    if not irregular.empty:
+    out = df.copy()
+    out[time_col] = pd.to_numeric(out[time_col], errors="raise")
+
+    times = out[time_col].to_numpy(dtype=float)
+    if not np.isfinite(times).all():
+        raise ValueError("Timestamps contain NaN or infinity.")
+
+    out = out.sort_values(time_col, kind="stable").reset_index(drop=True)
+    times = out[time_col].to_numpy(dtype=float)
+
+    if len(times) < 2:
+        return out
+
+    dt = np.diff(times)
+    if np.any(dt <= 0):
+        raise ValueError(
+            "Timestamps must be unique and strictly increasing. "
+            "Resolve duplicates explicitly before alignment."
+        )
+
+    median_dt = float(np.median(dt))
+    irregular = np.abs(dt - median_dt) > tolerance_s
+
+    if irregular.any():
         log.warning(
-            "%d irregular time gaps detected (tolerance %.3f s). "
-            "Inserting NaN rows at affected positions.",
-            len(irregular),
-            tolerance_s,
+            "%d irregular intervals detected; original timestamps preserved.",
+            int(irregular.sum()),
         )
-        # Build a uniform grid and reindex
-        t_start, t_end = df[time_col].iloc[0], df[time_col].iloc[-1]
-        n_samples = round((t_end - t_start) / median_dt) + 1
-        uniform_times = np.linspace(t_start, t_end, int(n_samples))
-        df_uniform = pd.DataFrame({time_col: uniform_times})
-        df = pd.merge_asof(
-            df_uniform, df, on=time_col, tolerance=tolerance_s, direction="nearest"
-        )
-    return df
+
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -207,42 +222,33 @@ def estimate_benign_stats(
     n_samples: int,
     use_mad: bool = True,
 ) -> tuple[float, float]:
-    """
-    Estimate mean and standard deviation from the first `n_samples` of a series,
-    assumed to represent a benign (pre-attack) interval.
+    """Estimate robust location and scale from a pre-attack calibration window."""
+    if n_samples < 2:
+        raise ValueError("n_samples must be >= 2")
 
-    IMPORTANT: this window must be from validation/training data,
-    never from the held-out test set.
+    calibration = pd.Series(series).iloc[:n_samples].to_numpy(dtype=float)
+    calibration = calibration[np.isfinite(calibration)]
 
-    Parameters
-    ----------
-    series    : input signal series
-    n_samples : number of initial samples to use (benign calibration window)
-    use_mad   : if True, use Median Absolute Deviation for robust sigma;
-                if False, fall back to sample standard deviation.
+    if calibration.size < 2:
+        raise ValueError(
+            "Calibration failed: fewer than two finite observations."
+        )
 
-    Returns
-    -------
-    (mu, sigma) : float, float
-    """
-    if not isinstance(series, pd.Series):
-        series = pd.Series(series)
-    calibration = series.iloc[:n_samples].dropna()
-    if len(calibration) == 0:
-        raise ValueError("Calibration window is empty after dropping NaN values.")
-    mu = float(calibration.median() if use_mad else calibration.mean())
+    mu = float(np.median(calibration) if use_mad else np.mean(calibration))
+
     if use_mad:
-        mad = float((calibration - mu).abs().median())
-        sigma = mad * 1.4826  # scale factor to match Gaussian std
-        if sigma < 1e-8:
-            # Fall back to std if MAD is degenerate
-            sigma = float(calibration.std(ddof=1))
-            log.debug("MAD is degenerate; falling back to std for calibration sigma.")
+        sigma = float(
+            1.4826 * np.median(np.abs(calibration - mu))
+        )
     else:
-        sigma = float(calibration.std(ddof=1))
-    if sigma == 0.0 or np.isnan(sigma):
-        log.warning("Calibration sigma is exactly zero or NaN; using fallback sigma=1e-6.")
-        sigma = 1e-6
+        sigma = float(np.std(calibration, ddof=1))
+
+    if not np.isfinite(mu) or not np.isfinite(sigma):
+        raise ValueError("Calibration failed: non-finite location or scale.")
+
+    if sigma < 0 or not np.isfinite(sigma):
+        raise ValueError("Calibration failed: invalid scale.")
+
     return mu, sigma
 
 

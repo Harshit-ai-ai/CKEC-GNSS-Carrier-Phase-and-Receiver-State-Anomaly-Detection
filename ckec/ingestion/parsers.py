@@ -64,12 +64,23 @@ def _rinex_epoch_to_gpst(obs_df: pd.DataFrame) -> pd.Series:
     Returns a float64 Series of GPS seconds within the week.
     """
     if isinstance(obs_df.index, pd.DatetimeIndex):
-        # Convert UTC datetime to GPS seconds-of-week
-        # GPS epoch: 1980-01-06 00:00:00 UTC; no leap-second correction applied here
+        # RINEX datetimes are UTC; UBX iTOW is GPS time-of-week.
         gps_epoch = pd.Timestamp("1980-01-06 00:00:00", tz="UTC")
-        t_utc = obs_df.index.tz_localize("UTC") if obs_df.index.tz is None else obs_df.index
-        elapsed = (t_utc - gps_epoch).total_seconds()
-        return pd.Series((elapsed % GPS_WEEK_SECONDS).values, index=obs_df.index, name="time_s")
+        t_utc = (
+            obs_df.index.tz_localize("UTC")
+            if obs_df.index.tz is None
+            else obs_df.index.tz_convert("UTC")
+        )
+
+        # GPS - UTC was 18 seconds during the September 2024 recordings.
+        elapsed_utc = (t_utc - gps_epoch).total_seconds()
+        gps_seconds = elapsed_utc + 18.0
+
+        return pd.Series(
+            gps_seconds % GPS_WEEK_SECONDS,
+            index=obs_df.index,
+            name="time_s",
+        )
     else:
         raise TypeError(
             "Cannot convert obs_df index to GPS time. "
